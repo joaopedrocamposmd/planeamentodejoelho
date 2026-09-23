@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UBNIC - Painel Estratégico</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { ubnic: { DEFAULT: '#3b877b', dark: '#2a6058', bg: '#f4f7f6', text: '#2c3e50', alert: '#e67e22', success: '#2ecc71', surface: 'rgba(255, 255, 255, 0.70)' } },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['IBM Plex Mono', 'monospace'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f4f7f6; color: #2c3e50; -webkit-font-smoothing: antialiased; }
+        
+        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.50); border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); padding: 1.5rem; }
+        .glass-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 12px; }
+        
+        input[type="number"], input[type="month"], input[type="text"], select { width: 100%; padding: 0.35rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.875rem; transition: all 0.2s; background-color: #fff; font-family: 'Inter', sans-serif; }
+        input:focus, select:focus { outline: none; border-color: #3b877b; box-shadow: 0 0 0 3px rgba(59, 135, 123, 0.15); }
+        label { font-size: 0.7rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.02em; }
+        
+        .collapse-content { display: none; }
+        .collapse-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        table { width: 100%; text-align: right; font-size: 0.75rem; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; }
+        th { text-align: center; font-weight: 700; padding: 0.5rem; border-bottom: 2px solid #e2e8f0; color: #475569; font-family: 'Inter', sans-serif; }
+        td { padding: 0.25rem; border-bottom: 1px solid #f1f5f9; }
+        
+        .proc-chart-container { position: relative; height: 120px; width: 100%; }
+        .main-chart-container { position: relative; height: 280px; width: 100%; cursor: pointer; }
+        
+        .badge-gdh { background-color: rgba(59, 135, 123, 0.1); color: #2a6058; font-size: 0.6rem; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: 800; }
+        .badge-alert { background-color: rgba(230, 126, 34, 0.1); color: #e67e22; font-size: 0.65rem; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: 800; border: 1px solid rgba(230, 126, 34, 0.3); }
+        
+        .delta-pos { color: #e67e22; font-weight: bold; } 
+        .delta-neg { color: #2ecc71; font-weight: bold; } 
+        .clinical-data { font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+        
+        #monthModal { backdrop-filter: blur(6px); transition: opacity 0.2s; z-index: 50; }
+        .event-row { display: grid; grid-template-columns: 2fr 1.5fr 1.2fr 1.2fr 2fr 0.5fr; gap: 0.5rem; align-items: end; padding: 0.75rem; background: rgba(255,255,255,0.8); border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 0.5rem; transition: transform 0.2s; }
+        .event-row:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .event-row input, .event-row select { font-size: 0.75rem; padding: 0.4rem; }
+        
+        .btn-primary { background-color: #3b877b; color: white; border-radius: 8px; font-weight: 600; transition: all 0.2s ease; border: none; cursor: pointer; box-shadow: 0 2px 4px rgba(59, 135, 123, 0.2); }
+        .btn-primary:hover { background-color: #2a6058; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 135, 123, 0.3); }
+
+        .fin-table th { padding: 0.4rem; font-size: 0.65rem; text-transform: uppercase; }
+        .fin-table td { padding: 0.25rem 0.1rem; }
+        .fin-table input { font-size: 0.7rem; padding: 0.25rem; text-align: right; }
+        .fin-calc-col { background-color: #f8fafc; font-weight: bold; color: #0f172a; }
+        
+        /* Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: #3b877b; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #3b877b; }
+        .toggle-checkbox { right: 0; z-index: 1; border-color: #e2e8f0; transition: all 0.3s; }
+        .toggle-label { width: 2.5rem; height: 1.25rem; background-color: #cbd5e1; border-radius: 9999px; transition: all 0.3s; cursor: pointer; }
+
+        .check-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background-color: #2ecc71; color: white; font-size: 9px; font-weight: bold; flex-shrink: 0; }
+        .cross-icon { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; background-color: #e11d48; color: white; font-size: 9px; font-weight: bold; flex-shrink: 0; }
+    </style>
+</head>
+<body class="p-4 md:p-8 text-sm">
+
+    <div class="max-w-[1600px] mx-auto">
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <div class="flex items-center gap-4">
+                <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M28 30 V50 C28 75 40 82 50 82 C60 82 72 75 72 50 V30" stroke="#3b877b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="28" cy="30" r="7" fill="#3b877b" stroke="white" stroke-width="2.5"/>
+                    <circle cx="50" cy="82" r="7" fill="#3b877b" stroke="white" stroke-width="2.5"/>
+                    <circle cx="72" cy="30" r="7" fill="#3b877b" stroke="white" stroke-width="2.5"/>
+                </svg>
+                <div>
+                    <h1 class="text-3xl font-extrabold text-ubnic-text tracking-tight mb-1">Painel Estratégico & Internamento</h1>
+                    <p class="text-slate-500 text-xs">UBNIC Medical Platform &middot; Modelo Determinístico de Coortes &middot; <b class="text-ubnic">Clique nos gráficos para detalhe mensal.</b></p>
+                </div>
+            </div>
+            <div class="w-full md:w-64 glass-panel !p-3 !py-2 !rounded-xl">
+                <label class="text-slate-500 mb-1">Horizonte de Simulação</label>
+                <select id="inp_horizonte" onchange="runSim()" class="font-bold text-lg text-ubnic-dark border-transparent bg-white shadow-sm">
+                    <option value="12">1 Ano (12 Meses)</option>
+                    <option value="24" selected>2 Anos (24 Meses)</option>
+                    <option value="36">3 Anos (36 Meses)</option>
+                    <option value="60">5 Anos (60 Meses)</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- SECÇÃO BASE DE DADOS -->
+        <div class="glass-panel mb-4 border-t-4 border-t-slate-700">
+            <button onclick="toggleSection('sec_estado_inicial')" class="w-full flex justify-between items-center text-left focus:outline-none">
+                <span class="text-lg font-bold text-ubnic-text">Configurar Base de Dados (Setembro 2026)</span>
+                <span id="icon_sec_estado_inicial" class="text-slate-400">▼</span>
+            </button>
+            <div id="sec_estado_inicial" class="collapse-content mt-6 border-t border-slate-200/60 pt-6">
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                    <div class="xl:col-span-3">
+                        <h3 class="font-bold text-ubnic-text mb-3 flex justify-between items-center"><span>LEC Atual</span><span class="bg-blue-50 border border-blue-100 px-2 py-0.5 rounded text-blue-700 text-xs">Total: <span id="tot_lec_base" class="clinical-data">1480</span></span></h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-2 gap-3" id="lec_base_inputs"></div>
+                    </div>
+                    <div class="xl:col-span-9 overflow-x-auto">
+                        <h3 class="font-bold text-ubnic-text mb-3 flex justify-between items-center"><span>LIC Atual (Dias)</span><span class="bg-red-50 border border-red-100 px-2 py-0.5 rounded text-red-700 text-xs">Total: <span id="tot_lic_base" class="clinical-data">351</span></span></h3>
+                        <table id="lic_base_table"><thead><tr id="lic_base_header"></tr></thead><tbody id="lic_base_body"></tbody></table>
+                    </div>
+                </div>
+                <div class="mt-5 flex justify-end"><button onclick="reloadFromBase()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 px-6 rounded-lg transition-all shadow-sm">Aplicar Matriz</button></div>
+            </div>
+        </div>
+
+        <!-- SECÇÃO FINANCEIRA -->
+        <div class="glass-panel mb-4 border-t-4 border-t-purple-600">
+            <button onclick="toggleSection('sec_financeiro')" class="w-full flex justify-between items-center text-left focus:outline-none">
+                <span class="text-lg font-bold text-ubnic-text">Gestão Financeira & Custos (Parâmetros)</span>
+                <span id="icon_sec_financeiro" class="text-slate-400">▼</span>
+            </button>
+            <div id="sec_financeiro" class="collapse-content mt-6 border-t border-slate-200/60 pt-6">
+                <div class="overflow-x-auto">
+                    <table class="fin-table w-full text-right" id="fin_table">
+                        <thead>
+                            <tr>
+                                <th class="text-left bg-white sticky left-0 z-10 border-r border-slate-200">Procedimento</th>
+                                <th title="Custo Material (Ex: Prótese)">Mat. (€)</th>
+                                <th title="Valor Base GDH">GDH (€)</th>
+                                <th title="% Remuneração Equipa">% Equipa</th>
+                                <th title="% Incentivos calculados automaticamente pelo motor">% Inc. (Auto)</th>
+                                <th title="Custos Internos de Bloco">Interno (€)</th>
+                                <th title="Taxa Fora (PTJ)">Tx Fora (€)</th>
+                                <th title="Custo Médio Estático Externalização" class="border-r border-slate-200">C. Ext (€)</th>
+                                <th class="fin-calc-col">U. Base (€)</th>
+                                <th class="fin-calc-col" title="Custo U. Adicional sem considerar os incentivos">U. Adic Base(€)</th>
+                                <th class="fin-calc-col" title="Custo U. Fora sem considerar os incentivos">U. Fora Base(€)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fin_table_body"></tbody>
+                    </table>
+                </div>
+                <p class="text-[0.65rem] text-slate-500 mt-3 italic">* Exceção Artroplastia: O cálculo da equipa para PTJ e PUC deduz automaticamente o valor estipulado de 1.367,40 € à base do GDH.</p>
+            </div>
+        </div>
+
+        <!-- SECÇÃO INCENTIVOS (CONTRATUALIZAÇÃO) -->
+        <div class="glass-panel mb-4 border-t-4 border-t-blue-500 bg-blue-50/20">
+            <button onclick="toggleSection('sec_incentivos')" class="w-full flex justify-between items-center text-left focus:outline-none">
+                <span class="text-lg font-bold text-ubnic-text">Matriz de Incentivos (Contratualização)</span>
+                <span id="icon_sec_incentivos" class="text-slate-400">▼</span>
+            </button>
+            <div id="sec_incentivos" class="collapse-content mt-6 border-t border-slate-200/60 pt-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Toggles Eficiência -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-blue-900 mb-4 uppercase text-[0.65rem] tracking-widest border-b border-slate-100 pb-2">Toggles de Eficiência Global (Até +10%)</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium text-slate-600">≥90% início anestesia no tempo <b class="text-blue-600">(+2.5%)</b></span>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"><input type="checkbox" id="inc_efi_1" onchange="runSim()" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="inc_efi_1" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium text-slate-600 flex items-center gap-2">Média turnover <input type="number" id="cfg_efi_turnover" value="20" class="!w-12 !p-0.5 !text-center !text-xs clinical-data"> min. <b class="text-blue-600">(+2.5%)</b></span>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"><input type="checkbox" id="inc_efi_2" onchange="runSim()" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="inc_efi_2" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium text-slate-600">Zero cancelamentos imputáveis <b class="text-blue-600">(+2.5%)</b></span>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"><input type="checkbox" id="inc_efi_3" onchange="runSim()" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="inc_efi_3" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label></div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium text-slate-600">Superação produção base (5%) <b class="text-blue-600">(+2.5%)</b></span>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"><input type="checkbox" id="inc_efi_4" onchange="runSim()" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/><label for="inc_efi_4" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Parametros Acesso -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-ubnic-text mb-4 uppercase text-[0.65rem] tracking-widest border-b border-slate-100 pb-2 flex items-center justify-between"><span>Limites de Acesso (Editáveis)</span><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[0.55rem]">Máx: 15%</span></h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label>Alvo LIC &lt; TMRG (Nível 1)</label><div class="relative"><input type="number" id="cfg_l1_lic_tmrg" value="93" onchange="runSim()" class="clinical-data"><span class="absolute right-3 top-1 text-slate-400 text-xs">%</span></div></div>
+                            <div><label>Alvo LIC &lt; TMRG (Nível 2)</label><div class="relative"><input type="number" id="cfg_l2_lic_tmrg" value="98" onchange="runSim()" class="clinical-data"><span class="absolute right-3 top-1 text-slate-400 text-xs">%</span></div></div>
+                            <div><label>Limite Tolerância LIC N1</label><div class="relative"><input type="number" id="cfg_l1_lic_max" value="270" onchange="runSim()" class="clinical-data"><span class="absolute right-3 top-1 text-slate-400 text-xs">Dias</span></div></div>
+                            <div><label>Limite Tolerância LEC N1</label><div class="relative"><input type="number" id="cfg_l1_lec_max" value="365" onchange="runSim()" class="clinical-data"><span class="absolute right-3 top-1 text-slate-400 text-xs">Dias</span></div></div>
+                            <div class="col-span-2"><label>Limite Tolerância LEC N2</label><div class="relative w-1/2 pr-2"><input type="number" id="cfg_l2_lec_max" value="270" onchange="runSim()" class="clinical-data"><span class="absolute right-5 top-1 text-slate-400 text-xs">Dias</span></div></div>
+                        </div>
+                        <p class="text-[0.55rem] text-slate-400 mt-3 leading-tight">* Nível 3 fixo a 100% de operados &lt; TMRG. Exceção LEC: Avaliada mensalmente com base no fluxo real de Consultas Adicionais ≥ Blocos Adicionais.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECÇÃO CAMAS -->
+        <div class="glass-panel mb-4 border-t-4 border-t-teal-600">
+            <button onclick="toggleSection('sec_camas')" class="w-full flex justify-between items-center text-left focus:outline-none">
+                <span class="text-lg font-bold text-ubnic-text">Gestão de Camas & Internamento (LOS)</span>
+                <span id="icon_sec_camas" class="text-slate-400">▼</span>
+            </button>
+            <div id="sec_camas" class="collapse-content mt-6 border-t border-slate-200/60 pt-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="los_inputs_container"></div>
+                <div class="mt-4 p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-500">
+                    O modelo assume a seguinte distribuição semanal de blocos: Trauma (Qua), Base (Ter/Qua), Adic 1-4 (Qui), Adic 5-8 (Seg), Adic 9-12 (Sex), Adic 13-16 (Qua), Resto (Sab).
+                </div>
+            </div>
+        </div>
+
+        <!-- TIMELINE EVENTOS -->
+        <div class="glass-panel mb-6 border-t-4 border-t-ubnic bg-ubnic/5">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-lg font-bold text-ubnic-dark uppercase tracking-tight">Planeamento de Produção & Eventos (Timeline)</h2>
+                <button onclick="addEventRow()" class="bg-white border border-ubnic/20 text-ubnic-dark font-bold py-1.5 px-4 rounded-lg hover:bg-ubnic/10 shadow-sm transition-colors text-xs">+ Adicionar Evento</button>
+            </div>
+            <div class="hidden md:grid grid-cols-[2fr_1.5fr_1.2fr_1.2fr_2fr_0.5fr] gap-2 mb-2 px-3 text-[0.65rem] font-bold text-slate-500 uppercase tracking-wider">
+                <div>Descrição do Evento</div><div>Tipo de Ação</div><div>Início (Mês/Ano)</div><div>Fim <span class="text-slate-400 normal-case font-normal">(vazio=contínuo)</span></div><div>Parâmetros <span class="text-slate-400 normal-case font-normal">(aceita valores ± e escolha do dia)</span></div><div class="text-center">Ação</div>
+            </div>
+            <div id="events_container" class="space-y-2"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            <div class="lg:col-span-3 space-y-6">
+                <div class="glass-card relative overflow-hidden p-5">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-400"></div>
+                    <h2 class="text-sm font-bold text-blue-900 mb-2 uppercase tracking-wide">Ritmo de Base (Contínuo)</h2>
+                    <p class="text-[0.65rem] text-slate-500 mb-5 leading-relaxed">Taxas aplicadas por defeito a todos os meses, exceto se sobrepostas por Eventos na Timeline.</p>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label>Pedidos (LEC)</label><input type="number" id="inp_pedidos" value="92" onchange="runSim()" class="clinical-data"></div>
+                            <div><label>Consultas Base</label><input type="number" id="inp_base_consultas" value="67" onchange="runSim()" class="clinical-data"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label>Tx. Alta 1ª C. (%)</label><input type="number" id="inp_tx_alta" value="35" min="0" max="50" onblur="validateBaseAlta(this)" onchange="runSim()" class="clinical-data"></div>
+                            <div><label>Tx. Cirúrgica (%)</label><input type="number" id="inp_tx_cirurgia" value="50" onchange="runSim()" class="clinical-data"></div>
+                        </div>
+                        <div class="p-4 bg-white/50 rounded-xl border border-white">
+                            <p class="text-[0.65rem] font-bold text-slate-600 mb-3 uppercase tracking-wide">Entradas Diretas S.U.</p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label>LCA</label><input type="number" id="inp_novos_lca" value="4" onchange="runSim()" class="clinical-data"></div>
+                                <div><label>Meniscos</label><input type="number" id="inp_novos_men" value="1" onchange="runSim()" class="clinical-data"></div>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 space-y-4">
+                            <div>
+                                <label class="text-blue-900">Cirurgias Prog. Base</label>
+                                <input type="number" id="inp_base_cirurgias" value="10" onchange="runSim()" class="clinical-data">
+                            </div>
+                            <div class="pt-3 border-t border-blue-200/50">
+                                <label class="text-blue-900">SU Fixo (Trauma/Infeção)</label>
+                                <input type="number" id="inp_base_su" value="6" onchange="runSim()" class="clinical-data" title="4.5 Trauma + 1.5 Infeção">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card relative overflow-hidden p-5">
+                    <div class="absolute top-0 left-0 w-1.5 h-full bg-ubnic"></div>
+                    <h2 class="text-sm font-bold text-ubnic-dark mb-5 uppercase tracking-wide">Produção Adic. Fixa</h2>
+                    <div class="space-y-5">
+                        <div><label class="text-ubnic-dark">Consultas Extra</label><input type="number" id="inp_extra_consultas" value="0" min="0" onchange="runSim()" class="clinical-data"></div>
+                        <div class="p-4 bg-white/50 rounded-xl border border-white space-y-4">
+                            <p class="text-[0.65rem] font-bold text-ubnic-dark uppercase tracking-wide">Blocos Extra <span class="badge-gdh ml-1">GDH Exclusivo</span></p>
+                            <div><label>Blocos "3 Médias"</label><input type="number" id="inp_extra_3med" value="0" min="0" onchange="runSim()" class="clinical-data"></div>
+                            <div><label>Blocos "2 Méd. + 2 Curtas"</label><input type="number" id="inp_extra_2med2curta" value="0" min="0" onchange="runSim()" class="clinical-data"></div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-200/50">
+                            <p class="text-[0.65rem] text-slate-500 uppercase font-bold tracking-wide">Rácio Global (Adic / Base)</p>
+                            <p class="text-3xl font-bold clinical-data text-ubnic-dark my-1" id="kpi_racio_cir">-</p>
+                            <p class="text-[0.6rem] text-slate-400 leading-tight">Média dos meses de simulação.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-9 space-y-6">
+                <!-- GRID DE KPIS GERAIS -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass-panel !p-5 border-l-4 border-l-blue-500 flex flex-col justify-between">
+                        <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-widest mb-2">Impacto LEC</p>
+                        <p class="text-4xl font-bold clinical-data text-ubnic-text" id="kpi_lec_target">-</p>
+                        <p class="text-xs mt-2" id="kpi_lec_delta">-</p>
+                    </div>
+                    <div class="glass-panel !p-5 bg-ubnic-text !border-transparent flex flex-col justify-between">
+                        <p class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-widest mb-2">LEC Fora Tempo</p>
+                        <p class="text-4xl font-bold clinical-data text-white"><span id="kpi_perc_lec_120">-</span><span class="text-2xl text-slate-400">%</span></p>
+                        <p class="text-[0.6rem] text-slate-400 mt-2 tracking-wide">> 120 Dias (Fim Período)</p>
+                    </div>
+                    <div class="glass-panel !p-5 border-l-4 border-l-ubnic-alert flex flex-col justify-between">
+                        <p class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-widest mb-2">Impacto LIC</p>
+                        <p class="text-4xl font-bold clinical-data text-ubnic-text" id="kpi_lic_target">-</p>
+                        <p class="text-xs mt-2" id="kpi_lic_delta">-</p>
+                    </div>
+                    <div class="glass-panel !p-5 bg-ubnic-text !border-transparent flex flex-col justify-between">
+                        <p class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-widest mb-2">LIC Fora Tempo</p>
+                        <p class="text-4xl font-bold clinical-data text-white"><span id="kpi_perc_lic_180">-</span><span class="text-2xl text-slate-400">%</span></p>
+                        <p class="text-[0.6rem] text-slate-400 mt-2 tracking-wide">> 180 Dias (Fim Período)</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel !p-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-ubnic-text uppercase tracking-wide flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-ubnic-alert"></span> Evolução LIC (Stock)
+                        </h3>
+                        <div class="text-xs font-bold px-3 py-1.5 bg-white rounded-lg text-slate-600 shadow-sm border border-slate-200">
+                            Acumulação Mensal: <span id="kpi_acumulacao_lic" class="clinical-data">-</span>
+                        </div>
+                    </div>
+                    <div class="main-chart-container mb-4" onclick="handleChartClick(event, chartLicBinsInstance)"><canvas id="chartLicBins"></canvas></div>
+                    
+                    <hr class="border-slate-200 mb-4">
+                    
+                    <h3 class="text-sm font-bold text-ubnic-text uppercase tracking-wide flex items-center gap-2 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span> Atividade LIC (Fluxos de Entradas e Saídas)
+                    </h3>
+                    <div class="main-chart-container mb-4" onclick="handleChartClick(event, chartLicActivityInstance)"><canvas id="chartLicActivity"></canvas></div>
+                    
+                    <hr class="border-slate-200 mb-4">
+                    
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-ubnic-text uppercase tracking-wide flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Evolução do Nível de Incentivos Atingido (Acesso + Eficiência)
+                        </h3>
+                        <div class="text-xs text-slate-500 hidden md:block">Clique nas colunas para diagnóstico detalhado no modal.</div>
+                    </div>
+                    <div class="main-chart-container mb-4" style="height: 140px;" onclick="handleChartClick(event, chartIncentivesInstance)"><canvas id="chartIncentives"></canvas></div>
+
+                    <hr class="border-slate-200 mb-4">
+
+                    <h3 class="text-sm font-bold text-teal-700 uppercase tracking-wide flex items-center gap-2 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-teal-500"></span> Evolução Ocupação de Camas (Média Diária vs Pico)
+                    </h3>
+                    <div class="main-chart-container" style="height: 160px;" onclick="handleChartClick(event, chartBedsInstance)"><canvas id="chartBeds"></canvas></div>
+                </div>
+
+                <div class="glass-panel !p-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-sm font-bold text-ubnic-text uppercase tracking-wide flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Evolução LEC (Stock)
+                        </h3>
+                        <div class="text-xs font-bold px-3 py-1.5 bg-white rounded-lg text-slate-600 shadow-sm border border-slate-200">
+                            Acumulação Mensal: <span id="kpi_acumulacao_lec" class="clinical-data">-</span>
+                        </div>
+                    </div>
+                    <div class="main-chart-container mb-4" onclick="handleChartClick(event, chartLecBinsInstance)"><canvas id="chartLecBins"></canvas></div>
+                    
+                    <hr class="border-slate-200 mb-4">
+                    
+                    <h3 class="text-sm font-bold text-ubnic-text uppercase tracking-wide flex items-center gap-2 mb-2">
+                        <span class="w-2 h-2 rounded-full bg-slate-400"></span> Atividade LEC (Fluxos de Entradas e Saídas)
+                    </h3>
+                    <div class="main-chart-container" onclick="handleChartClick(event, chartLecActivityInstance)"><canvas id="chartLecActivity"></canvas></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SECÇÃO IMPACTO FINANCEIRO KPI -->
+        <div class="glass-panel mb-6 border-t-4 border-t-purple-600 bg-purple-50/30">
+            <h2 class="text-lg font-bold text-ubnic-text mb-5 uppercase tracking-tight">Impacto Financeiro da Simulação Cirúrgica</h2>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <div class="md:col-span-5 grid grid-rows-3 gap-3">
+                    <div class="bg-white border border-purple-100 p-4 rounded-xl shadow-sm flex flex-col justify-center">
+                        <span class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-widest">Custo Médio Mensal</span>
+                        <span class="text-2xl font-bold text-purple-700 clinical-data mt-1" id="kpi_cost_month">-</span>
+                    </div>
+                    <div class="bg-white border border-purple-100 p-4 rounded-xl shadow-sm flex flex-col justify-center">
+                        <span class="text-[0.65rem] text-slate-500 font-bold uppercase tracking-widest">Projeção Anualizada (Média)</span>
+                        <span class="text-2xl font-bold text-purple-700 clinical-data mt-1" id="kpi_cost_year">-</span>
+                    </div>
+                    <div class="bg-purple-700 border border-purple-800 p-4 rounded-xl shadow-md flex flex-col justify-center">
+                        <span class="text-[0.65rem] text-purple-200 font-bold uppercase tracking-widest">Custo Total do Horizonte</span>
+                        <span class="text-2xl font-bold text-white clinical-data mt-1" id="kpi_cost_total">-</span>
+                    </div>
+                </div>
+                <div class="md:col-span-7">
+                    <div class="main-chart-container h-full min-h-[220px]" onclick="handleChartClick(event, chartCostsInstance)"><canvas id="chartCosts"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-panel mt-6 border-t-4 border-t-slate-300">
+            <button onclick="toggleSection('sec_procedimentos')" class="w-full flex justify-between items-center text-left focus:outline-none">
+                <span class="text-lg font-bold text-ubnic-text">Raio-X Clínico: Idade da Lista por Procedimento</span>
+                <span id="icon_sec_procedimentos" class="text-slate-400">▼</span>
+            </button>
+            <div id="sec_procedimentos" class="collapse-content mt-6 border-t border-slate-200/60 pt-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="proc_charts_grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MENSAL UBNIC STYLE -->
+    <div id="monthModal" class="hidden fixed inset-0 bg-ubnic-text/60 flex justify-center items-center p-4 z-50">
+        <div class="bg-[#f4f7f6] rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col max-h-[95vh] overflow-hidden border border-white/20">
+            <div class="p-6 bg-white border-b border-slate-200 flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold text-ubnic-text tracking-tight flex items-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M28 30 V50 C28 75 40 82 50 82 C60 82 72 75 72 50 V30" stroke="#3b877b" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Atividade Mensal: <span class="text-ubnic" id="modalTitleDate">MM/YY</span>
+                    </h2>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-ubnic-alert hover:text-white font-bold transition-colors">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6 flex-1">
+                
+                <!-- DIAGNÓSTICO DO NÍVEL DE ACESSO -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col md:flex-row">
+                    <div class="bg-slate-50 p-6 md:w-1/3 border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-center items-center text-center">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Acesso Atingido</p>
+                        <div id="modAccLevelBadge" class="text-3xl font-extrabold text-white bg-blue-500 px-6 py-2 rounded-xl shadow-sm mb-2">Nível -</div>
+                        <p class="text-xs text-slate-500"><b id="modAccPercGain" class="text-slate-700">0%</b> alocado ao valor unitário</p>
+                    </div>
+                    <div class="p-5 md:w-2/3">
+                        <p id="modAccCriteriaTitle" class="text-[0.65rem] font-bold text-blue-900 uppercase tracking-widest mb-3 pb-2 border-b border-slate-100">Diagnóstico de Critérios (Contrato-Programa)</p>
+                        <div class="space-y-3" id="modAccCriteriaList"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col">
+                        <h3 class="font-bold text-blue-900 border-b border-slate-100 pb-3 mb-5 uppercase text-xs tracking-widest flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500"></span> Porta de Entrada (LEC)
+                        </h3>
+                        <div class="space-y-4 flex-1">
+                            <div class="flex justify-between items-end border-b border-slate-50 pb-2">
+                                <span class="text-slate-500 font-medium text-xs">Novos Pedidos Inseridos</span>
+                                <b class="text-blue-600 text-xl clinical-data" id="modLecIn">-</b>
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <span class="text-slate-500 font-medium text-xs">Consultas Realizadas</span>
+                                <b class="text-ubnic-success text-xl clinical-data" id="modLecOut">-</b>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100" id="modLecBreakdown"></div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col">
+                        <h3 class="font-bold text-ubnic-alert border-b border-slate-100 pb-3 mb-5 uppercase text-xs tracking-widest flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-ubnic-alert"></span> Porta de Saída (LIC)
+                        </h3>
+                        <div class="space-y-4 flex-1">
+                            <div class="flex justify-between items-end border-b border-slate-50 pb-2">
+                                <span class="text-slate-500 font-medium text-xs">Novas Indicações Cirúrgicas</span>
+                                <b class="text-ubnic-alert text-xl clinical-data" id="modLicIn">-</b>
+                            </div>
+                            <div class="flex justify-between items-end">
+                                <span class="text-slate-500 font-medium text-xs">Utentes Operados</span>
+                                <b class="text-ubnic-success text-xl clinical-data" id="modLicOut">-</b>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-[0.65rem] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100 flex flex-col justify-center" id="modLicBreakdown">
+                            <span id="modLicBreakdownText" class="block mb-1"></span>
+                            <span id="modLicBreakdownExt" class="block font-bold text-teal-700"></span>
+                            <span id="modLicBreakdownFora" class="block font-bold text-purple-700"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col">
+                        <h3 class="font-bold text-teal-700 border-b border-slate-100 pb-3 mb-3 uppercase text-xs tracking-widest flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-teal-500"></span> Internamento
+                        </h3>
+                        <div class="flex-1 flex flex-col justify-center">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-slate-500 text-xs font-bold uppercase">Camas Ocupadas (Média/Pico)</span>
+                                <b class="text-teal-700 text-lg clinical-data" id="modBedsKpi">-</b>
+                            </div>
+                            <div class="h-24 w-full relative"><canvas id="modChartBedsDow"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalhe Custos Modal -->
+                <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
+                    <p class="text-[0.6rem] uppercase font-bold text-purple-800 mb-2 tracking-wide">Custos Operacionais do Mês:</p>
+                    <div class="grid grid-cols-4 gap-2 text-center text-xs">
+                        <div><span class="text-slate-500 block">Base</span><b class="text-slate-700 clinical-data" id="modCostBase">-</b></div>
+                        <div><span class="text-slate-500 block">Adicional</span><b class="text-slate-700 clinical-data" id="modCostAdic">-</b></div>
+                        <div><span class="text-slate-500 block">Oper. Fora</span><b class="text-slate-700 clinical-data" id="modCostFora">-</b></div>
+                        <div><span class="text-slate-500 block">Externaliz.</span><b class="text-slate-700 clinical-data" id="modCostExt">-</b></div>
+                    </div>
+                </div>
+
+                <!-- Bloco Remuneração Cirúrgica -->
+                <div id="modRemuneracaoMasterBox" class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col mt-4">
+                    <h3 class="font-bold text-ubnic-text border-b border-slate-100 pb-3 mb-3 uppercase text-xs tracking-widest flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-purple-500"></span> Remuneração Unitária GDH (Produção Adicional Interna)
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right text-xs fin-table">
+                            <thead>
+                                <tr class="text-slate-500 border-b border-slate-200 bg-slate-50">
+                                    <th class="text-left py-2 px-2">Procedimento</th>
+                                    <th>Unitário Equipa</th>
+                                    <th>Cirurgiões (50.35/47.75%)</th>
+                                    <th>Principal (50%)</th>
+                                    <th>Principal (60%)</th>
+                                    <th>Principal (70%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modRemuneracaoBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="text-[0.6rem] text-slate-400 mt-2 italic">* Honorários aplicados considerando a percentagem base da equipa + <span id="modRemIncBadge" class="font-bold text-purple-600"></span> de incentivos atingidos neste mês. Dedução de 1367,40€ base aplicada à PTJ e PUC.</div>
+                </div>
+
+                <div id="modEventsMasterBox" class="hidden bg-slate-50 rounded-xl p-4 border border-slate-200 mt-4">
+                    <p class="text-[0.6rem] uppercase font-bold text-slate-500 mb-2 tracking-wide">Eventos Ativos Neste Mês:</p>
+                    <div class="text-xs text-slate-700 space-y-1" id="modEventsText"></div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="font-bold text-ubnic-text mb-4 border-b border-slate-200 pb-2 uppercase text-xs tracking-widest">Procedimentos do Mês (Inscritos vs Operados)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3" id="modProcsGrid"></div>
+                </div>
+            </div>
+            
+            <div class="p-5 border-t border-slate-200 bg-white text-right">
+                <button onclick="closeModal()" class="btn-primary px-8">Fechar Análise</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currFormat = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
+
+        const defaultProcedures = [
+            {"name": "LCA", "ratio": 0, "duration": "média/longa", "has_gdh": false, "los": 0, "bins": [2, 3, 4, 6, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
+            {"name": "Meniscos Jovens", "ratio": 0, "duration": "média", "has_gdh": false, "los": 0, "bins": [1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
+            {"name": "PTJ", "ratio": 0.2388, "duration": "média", "has_gdh": true, "los": 3, "bins": [15, 8, 27, 10, 16, 12, 21, 15, 18, 20, 11, 4, 0, 1, 0, 1], material: 1367.40, gdh_total: 4987.11, perc_equipa: 55, custo_interno: 1500, taxa_fora: 2500, custo_ext: 6869.54},
+            {"name": "PTJ Difícil", "ratio": 0.0224, "duration": "longa", "has_gdh": false, "los": 5, "bins": [0, 1, 2, 1, 2, 1, 2, 1, 1, 0, 0, 1, 1, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
+            {"name": "PUC", "ratio": 0.0299, "duration": "média", "has_gdh": true, "los": 0, "bins": [0, 0, 0, 0, 1, 1, 3, 1, 1, 2, 2, 1, 0, 0, 0, 0], material: 1590.00, gdh_total: 4841.16, perc_equipa: 55, custo_interno: 1500, taxa_fora: 0, custo_ext: 6677.27},
+            {"name": "Rev. Artroplastia", "ratio": 0.0194, "duration": "longa", "has_gdh": false, "los": 5, "bins": [0, 2, 1, 0, 2, 2, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
+            {"name": "EMO", "ratio": 0.0149, "duration": "curta", "has_gdh": true, "los": 0, "bins": [1, 0, 1, 1, 2, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0], material: 0, gdh_total: 1851.27, perc_equipa: 45, custo_interno: 500, taxa_fora: 0, custo_ext: 2311.22},
+            {"name": "Artroscopia", "ratio": 0.1194, "duration": "curta", "has_gdh": true, "los": 0, "bins": [5, 3, 12, 4, 10, 5, 19, 7, 11, 3, 1, 0, 0, 0, 0, 0], material: 0, gdh_total: 2064.00, perc_equipa: 55, custo_interno: 500, taxa_fora: 0, custo_ext: 2637.60},
+            {"name": "PRP", "ratio": 0.0299, "duration": "curta", "has_gdh": false, "los": 0, "bins": [0, 0, 0, 3, 5, 3, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
+            {"name": "MPFL", "ratio": 0.0045, "duration": "média", "has_gdh": false, "los": 0, "bins": [0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
+            {"name": "MPFL + TAT", "ratio": 0.0045, "duration": "média", "has_gdh": false, "los": 0, "bins": [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
+            {"name": "Osteotomia", "ratio": 0.0075, "duration": "média", "has_gdh": false, "los": 3, "bins": [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
+            {"name": "Outros", "ratio": 0.0149, "duration": "média", "has_gdh": false, "los": 2, "bins": [2, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0}
+        ];
+        const defaultLec = [276, 276, 276, 276, 276, 100, 0, 0, 0];
+        const lecLabels = ['0-90', '90-180', '180-270', '270-360', '360-450', '450-540', '540-630', '630-720', '>720'];
+        const licBinLabels = ['<30', '30-60', '60-90', '90-120', '120-150', '150-180', '180-210', '210-240', '240-270', '270-300', '300-330', '330-360', '360-390', '390-420', '420-450', '450-480'];
+        const BASE_RATIO_SUM = 0.506; 
+
+        let currentProcedures = JSON.parse(JSON.stringify(defaultProcedures));
+        let currentLec = [...defaultLec];
+        let sysLOS = { Trauma: 7, Infeção: 30 };
+        
+        let chartLicBinsInstance, chartLecBinsInstance, chartLicActivityInstance, chartLecActivityInstance, chartBedsInstance, chartCostsInstance, chartIncentivesInstance, modChartBedsDowInstance;
+        let procChartInstances = {};
+        let simHistory = []; 
+
+        let plannedEvents = [
+            { id: 1, title: 'Consulta PMS (Fase 1)', type: 'add_cons_base', start: '2026-10', end: '2026-12', val: 20, dow: 1 },
+            { id: 2, title: 'Consulta JMC', type: 'add_cons_base', start: '2027-01', end: '2027-09', val: 20, dow: 1 },
+            { id: 3, title: 'Novos Critérios Triagem', type: 'metric_change', start: '2027-01', end: '', val_tx_alta: 15 },
+            { id: 4, title: 'Consulta PMS (Fase 2)', type: 'add_cons_base', start: '2027-05', end: '', val: 20, dow: 1 },
+            { id: 5, title: 'Bloco PMS (Prog Base)', type: 'add_cir_base', start: '2027-05', end: '', val: 7, dow: 1 }
+        ];
+
+        const colorsLic = ['#2ecc71', '#eab308', '#e67e22', '#e11d48', '#881337']; 
+        const labelsLicTarget = ['< 120 dias', '120-180 dias', '180-270 dias', '270-365 dias', '> 365 dias'];
+
+        // TOOLTIP EXTERNO CUSTOMIZADO PARA FORÇAR POSICIONAMENTO À DIREITA DO CURSOR
+        const customExternalTooltip = (context) => {
+            let tooltipEl = document.getElementById('chartjs-custom-tooltip');
+            if (!tooltipEl) {
+                tooltipEl = document.createElement('div');
+                tooltipEl.id = 'chartjs-custom-tooltip';
+                tooltipEl.style.background = 'rgba(30, 41, 59, 0.95)';
+                tooltipEl.style.borderRadius = '8px';
+                tooltipEl.style.color = 'white';
+                tooltipEl.style.opacity = '0';
+                tooltipEl.style.pointerEvents = 'none';
+                tooltipEl.style.position = 'absolute';
+                tooltipEl.style.transform = 'translate(15px, -50%)';
+                tooltipEl.style.transition = 'opacity .15s ease, transform .15s ease';
+                tooltipEl.style.fontFamily = "'Inter', sans-serif";
+                tooltipEl.style.fontSize = '11px';
+                tooltipEl.style.padding = '8px 12px';
+                tooltipEl.style.zIndex = '100';
+                tooltipEl.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.2)';
+                document.body.appendChild(tooltipEl);
+            }
+
+            const {chart, tooltip} = context;
+            if (tooltip.opacity === 0) {
+                tooltipEl.style.opacity = '0';
+                return;
+            }
+
+            if (tooltip.body) {
+                const titleLines = tooltip.title || [];
+                const bodyLines = tooltip.body.map(b => b.lines);
+
+                let innerHtml = '';
+                titleLines.forEach(title => {
+                    innerHtml += `<div style="font-weight:700;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:2px;font-size:12px;">${title}</div>`;
+                });
+
+                bodyLines.forEach((body, i) => {
+                    const colors = tooltip.labelColors[i];
+                    let span = `<span style="background:${colors.backgroundColor};border-color:${colors.borderColor};border-width:2px;border-style:solid;display:inline-block;height:8px;width:8px;margin-right:6px;border-radius:2px;"></span>`;
+                    innerHtml += `<div style="display:flex;align-items:center;margin-top:2px;">${span}${body}</div>`;
+                });
+
+                if (tooltip.footer) {
+                    tooltip.footer.forEach(f => {
+                        innerHtml += `<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.2);padding-top:4px;white-space:pre-line;color:#cbd5e1;font-size:10px;">${f}</div>`;
+                    });
+                }
+
+                tooltipEl.innerHTML = innerHtml;
+            }
+
+            const position = chart.canvas.getBoundingClientRect();
+            tooltipEl.style.opacity = '1';
+            tooltipEl.style.left = position.left + window.pageXOffset + tooltip.caretX + 'px';
+            tooltipEl.style.top = position.top + window.pageYOffset + tooltip.caretY + 'px';
+        };
+
+        function toggleSection(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('icon_' + id);
+            if(el.classList.contains('active')) { el.classList.remove('active'); icon.innerText = '▼'; } 
+            else { el.classList.add('active'); icon.innerText = '▲'; }
+        }
+
+        // ---- COST CALCULATOR ----
+        function getCostUnit(p, type, dynamicInc = 0) {
+            let baseGDH = p.gdh_total || 0;
+            if (p.name === 'PTJ' || p.name === 'PUC') { baseGDH = Math.max(0, (p.gdh_total || 0) - 1367.40); }
+            let equipa_inc = baseGDH * (((p.perc_equipa || 0) + dynamicInc) / 100);
+
+            if (type === 'base') return (p.material || 0) + (p.custo_interno || 0);
+            if (type === 'adic') return (p.material || 0) + (p.custo_interno || 0) + equipa_inc;
+            if (type === 'fora') return (p.material || 0) + (p.taxa_fora || 0) + (equipa_inc * 0.811);
+            if (type === 'ext') return (p.custo_ext || 0);
+            return 0;
+        }
+
+        function renderFinTable() {
+            let html = '';
+            currentProcedures.forEach((p, i) => {
+                let badge = p.has_gdh ? '<span class="badge-gdh ml-1 text-[0.55rem]">GDH</span>' : '';
+                
+                let cBase = getCostUnit(p, 'base', 0);
+                let cAdic = getCostUnit(p, 'adic', 0);
+                let cFora = p.name === 'PTJ' ? getCostUnit(p, 'fora', 0) : 0;
+
+                let strFora = p.name === 'PTJ' ? currFormat.format(cFora) : '<span class="text-slate-300">-</span>';
+
+                html += `<tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td class="text-left font-bold text-ubnic-text whitespace-nowrap bg-white sticky left-0 z-10 border-r border-slate-200">${p.name} ${badge}</td>
+                    <td><input type="number" step="0.01" value="${p.material}" onchange="updateFin(${i}, 'material', this.value)" class="clinical-data !w-20"></td>
+                    <td><input type="number" step="0.01" value="${p.gdh_total}" onchange="updateFin(${i}, 'gdh_total', this.value)" class="clinical-data !w-24"></td>
+                    <td><input type="number" step="0.01" value="${p.perc_equipa}" onchange="updateFin(${i}, 'perc_equipa', this.value)" class="clinical-data !w-16"></td>
+                    <td><input type="text" disabled value="Auto" class="bg-slate-100 !w-16 text-center text-slate-400 font-bold"></td>
+                    <td><input type="number" step="0.01" value="${p.custo_interno}" onchange="updateFin(${i}, 'custo_interno', this.value)" class="clinical-data !w-20"></td>
+                    <td><input type="number" step="0.01" value="${p.taxa_fora}" ${p.name!=='PTJ'?'disabled class="bg-slate-100 !w-20"':'class="clinical-data !w-20"'} onchange="updateFin(${i}, 'taxa_fora', this.value)"></td>
+                    <td class="border-r border-slate-200"><input type="number" step="0.01" value="${p.custo_ext}" onchange="updateFin(${i}, 'custo_ext', this.value)" class="clinical-data !w-24"></td>
+                    
+                    <td class="fin-calc-col clinical-data">${cBase > 0 ? currFormat.format(cBase) : '-'}</td>
+                    <td class="fin-calc-col clinical-data text-slate-500 font-normal">${cAdic > 0 ? currFormat.format(cAdic) : '-'}</td>
+                    <td class="fin-calc-col clinical-data text-slate-500 font-normal">${strFora}</td>
+                </tr>`;
+            });
+            document.getElementById('fin_table_body').innerHTML = html;
+        }
+
+        function updateFin(idx, field, val) {
+            currentProcedures[idx][field] = parseFloat(val) || 0;
+            renderFinTable();
+            runSim(); 
+        }
+
+        function buildLosInputs() {
+            let html = `<div><label>Trauma</label><input type="number" id="inp_los_trauma" value="${sysLOS.Trauma}" onchange="updateLosSys('Trauma', this.value)" class="clinical-data text-xs"></div>
+                        <div><label>Infeção</label><input type="number" id="inp_los_infecao" value="${sysLOS.Infeção}" onchange="updateLosSys('Infeção', this.value)" class="clinical-data text-xs"></div>`;
+            currentProcedures.forEach((p, i) => {
+                html += `<div><label>${p.name}</label><input type="number" value="${p.los}" onchange="updateLosProc(${i}, this.value)" class="clinical-data text-xs"></div>`;
+            });
+            document.getElementById('los_inputs_container').innerHTML = html;
+        }
+        function updateLosSys(key, val) { sysLOS[key] = parseFloat(val) || 0; runSim(); }
+        function updateLosProc(idx, val) { currentProcedures[idx].los = parseFloat(val) || 0; runSim(); }
+
+        function renderEvents() {
+            const container = document.getElementById('events_container');
+            container.innerHTML = '';
+            plannedEvents.forEach((ev, i) => {
+                let valInput = '';
+                if(ev.type === 'metric_change') {
+                    valInput = `
+                        <div class="grid grid-cols-3 gap-1">
+                            <div>
+                                <span class="text-[0.6rem] font-bold text-slate-500 uppercase block mb-0.5" title="Taxa de Alta (0-50%)">Alta (%)</span>
+                                <input type="number" min="0" max="50" value="${ev.val_tx_alta||0}" onchange="updateEv(${i}, 'val_tx_alta', this.value)" onblur="validateAlta(this, ${i})" class="clinical-data !text-xs">
+                            </div>
+                            <div>
+                                <span class="text-[0.6rem] font-bold text-slate-500 uppercase block mb-0.5" title="Calculado Automaticamente">Ped (Auto)</span>
+                                <input type="number" value="${ev.val_pedidos||0}" readonly class="clinical-data !text-xs bg-slate-100 text-slate-400 cursor-not-allowed">
+                            </div>
+                            <div>
+                                <span class="text-[0.6rem] font-bold text-slate-500 uppercase block mb-0.5" title="Calculado Automaticamente">Tx. Cir (%) (Auto)</span>
+                                <input type="number" value="${(ev.val_tx_cir||0).toFixed(1)}" readonly class="clinical-data !text-xs bg-slate-100 text-slate-400 cursor-not-allowed">
+                            </div>
+                        </div>`;
+                } else if(ev.type === 'ext_gdh') {
+                    valInput = `
+                        <div>
+                            <span class="text-[0.6rem] font-bold text-slate-500 uppercase block mb-0.5">Volume Exclusivo (≥ 0)</span>
+                            <div class="grid grid-cols-2 gap-1 text-[0.55rem] uppercase">
+                                <div class="flex items-center gap-1" title="PTJ Externalizadas">PTJ <input type="number" min="0" value="${ev.val_ptj||0}" onchange="updateEv(${i}, 'val_ptj', this.value)" onblur="validateNonNegative(this)" placeholder="0" class="clinical-data !p-1"></div>
+                                <div class="flex items-center gap-1" title="PUC Externalizadas">PUC <input type="number" min="0" value="${ev.val_puc||0}" onchange="updateEv(${i}, 'val_puc', this.value)" onblur="validateNonNegative(this)" placeholder="0" class="clinical-data !p-1"></div>
+                                <div class="flex items-center gap-1" title="Artroscopias Externalizadas">Art <input type="number" min="0" value="${ev.val_artro||0}" onchange="updateEv(${i}, 'val_artro', this.value)" onblur="validateNonNegative(this)" placeholder="0" class="clinical-data !p-1"></div>
+                                <div class="flex items-center gap-1" title="EMO Externalizadas">EMO <input type="number" min="0" value="${ev.val_emo||0}" onchange="updateEv(${i}, 'val_emo', this.value)" onblur="validateNonNegative(this)" placeholder="0" class="clinical-data !p-1"></div>
+                            </div>
+                        </div>`;
+                } else if(ev.type === 'add_cir_base' || ev.type === 'add_cir_extra') {
+                    valInput = `
+                        <div class="grid grid-cols-2 gap-1">
+                            <div>
+                                <span class="text-[0.6rem] font-bold text-slate-500 uppercase block mb-0.5">Volume (±)</span>
+                                <input type="number" value="${ev.val||0}" onchange="updateEv(${i}, 'val', this.value)" placeholder="Ex: +7 ou -2" title="Volume de cirurgias" class="clinical-data !text-xs">
+                            </div>
+                            <div>
+                                <span class="text-[0.6rem] font-bold text-slate-500 uppercase block mb-0.5">Dia Semana</span>
+                                <select onchange="updateEv(${i}, 'dow', this.value)" title="Dia da semana do bloco cirúrgico" class="text-xs">
+                                    <option value="0" ${ev.dow==0?'selected':''}>Segunda</option>
+                                    <option value="1" ${ev.dow==1?'selected':''}>Terça</option>
+                                    <option value="2" ${ev.dow==2?'selected':''}>Quarta</option>
+                                    <option value="3" ${ev.dow==3?'selected':''}>Quinta</option>
+                                    <option value="4" ${ev.dow==4?'selected':''}>Sexta</option>
+                                    <option value="5" ${ev.dow==5?'selected':''}>Sábado</option>
+                                    <option value="6" ${ev.dow==6?'selected':''}>Domingo</option>
+                                </select>
+                            </div>
+                        </div>`;
+                } else {
+                    let tip = "Aceita valores positivos (reforço) ou negativos (ex: -10 para ausências/férias)";
+                    valInput = `
+                        <div>
+                            <span class="text-[0.6rem] font-bold text-slate-500 uppercase block mb-0.5">Variação Mensal (±)</span>
+                            <input type="number" value="${ev.val||0}" onchange="updateEv(${i}, 'val', this.value)" placeholder="Ex: +20 ou -10" title="${tip}" class="clinical-data !text-xs">
+                        </div>`;
+                }
+                
+                container.innerHTML += `
+                <div class="event-row">
+                    <input type="text" value="${ev.title}" onchange="updateEv(${i}, 'title', this.value)" class="font-bold text-ubnic-text" placeholder="Nome do Evento" title="Identificação do Evento">
+                    <select onchange="updateEv(${i}, 'type', this.value)" title="Tipo de Ação na Timeline">
+                        <option value="add_cons_base" ${ev.type=='add_cons_base'?'selected':''}>± Consultas (Base)</option>
+                        <option value="add_cons_extra" ${ev.type=='add_cons_extra'?'selected':''}>± Consultas (Adic.)</option>
+                        <option value="add_cir_base" ${ev.type=='add_cir_base'?'selected':''}>± Cirurgias (Base)</option>
+                        <option value="add_cir_extra" ${ev.type=='add_cir_extra'?'selected':''}>± Cir. GDH (Adic)</option>
+                        <option value="metric_change" ${ev.type=='metric_change'?'selected':''}>Alt. Critérios (Base)</option>
+                        <option value="ext_gdh" ${ev.type=='ext_gdh'?'selected':''}>Externalização GDH</option>
+                        <option value="op_ptj_fora" ${ev.type=='op_ptj_fora'?'selected':''}>Operar PTJ Fora (Int)</option>
+                    </select>
+                    <input type="month" id="ev_start_${i}" value="${ev.start}" onchange="updateStartDate(${i}, this.value)" class="clinical-data !text-xs text-slate-500" title="Mês de Início">
+                    <input type="month" id="ev_end_${i}" value="${ev.end}" min="${ev.start}" onchange="updateEv(${i}, 'end', this.value)" class="clinical-data !text-xs text-slate-500" title="Mês de Fim (vazio = contínuo)">
+                    ${valInput}
+                    <div class="text-center">
+                        <button onclick="removeEvent(${i})" class="text-slate-400 hover:bg-ubnic-alert hover:text-white rounded px-2.5 py-1.5 font-bold transition-colors shadow-sm" title="Remover Evento">&times;</button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function validateBaseAlta(inputEl) {
+            let val = parseFloat(inputEl.value);
+            if (isNaN(val) || val < 0) val = 0;
+            if (val > 50) val = 50;
+            if (inputEl.value != val) {
+                inputEl.value = val;
+                inputEl.dispatchEvent(new Event('change'));
+            }
+        }
+
+        function validateAlta(inputEl, index) {
+            let val = parseFloat(inputEl.value);
+            if (isNaN(val) || val < 0) val = 0;
+            if (val > 50) val = 50;
+            inputEl.value = val;
+            updateEv(index, 'val_tx_alta', val);
+        }
+
+        function validateNonNegative(inputEl) {
+            if (parseFloat(inputEl.value) < 0 || inputEl.value === '') {
+                inputEl.value = 0;
+                inputEl.dispatchEvent(new Event('change'));
+            }
+        }
+
+        function updateStartDate(index, val) {
+            plannedEvents[index]['start'] = val;
+            const endInput = document.getElementById(`ev_end_${index}`);
+            if(endInput) {
+                endInput.min = val;
+                if(endInput.value && endInput.value < val) {
+                    endInput.value = val;
+                    plannedEvents[index]['end'] = val;
+                }
+            }
+            runSim();
+        }
+
+        function updateEv(index, field, value) { 
+            let ev = plannedEvents[index];
+            if(field === 'end') {
+                const startVal = ev['start'];
+                if(startVal && value && value < startVal) {
+                    alert('A data de fim não pode ser prévia à data de início.');
+                    renderEvents();
+                    return;
+                }
+            }
+            
+            if (ev.type === 'ext_gdh') {
+                if (field === 'val_ptj') value = Math.max(0, parseFloat(value) || 0);
+                if (field === 'val_puc') value = Math.max(0, parseFloat(value) || 0);
+                if (field === 'val_artro') value = Math.max(0, parseFloat(value) || 0);
+                if (field === 'val_emo') value = Math.max(0, parseFloat(value) || 0);
+            }
+            if (ev.type === 'op_ptj_fora' && field === 'val') {
+                value = Math.max(0, parseFloat(value) || 0);
+            }
+            if (field === 'dow') {
+                value = parseInt(value) || 0;
+            }
+
+            plannedEvents[index][field] = value; 
+            if(field === 'type') {
+                if(value === 'add_cir_base' || value === 'add_cir_extra') {
+                    if(ev.dow === undefined) ev.dow = 1;
+                }
+                if(value === 'metric_change' && ev.val_tx_alta === undefined) {
+                    ev.val_tx_alta = 15;
+                }
+                renderEvents();
+            }
+            runSim(); 
+        }
+
+        function removeEvent(index) { plannedEvents.splice(index, 1); renderEvents(); runSim(); }
+        function addEventRow() { plannedEvents.push({ id: Date.now(), title: 'Novo Evento', type: 'add_cons_base', start: '2026-10', end: '', val: 0, dow: 1 }); renderEvents(); }
+
+        function initBaseTables() {
+            let lecHtml = '';
+            for(let i=0; i<lecLabels.length; i++) lecHtml += `<div><label class="!normal-case !text-slate-500">${lecLabels[i]}</label><input type="number" id="inp_lec_${i}" value="${currentLec[i]}" class="clinical-data text-xs"></div>`;
+            document.getElementById('lec_base_inputs').innerHTML = lecHtml;
+            let headHtml = '<th class="text-left min-w-[140px]">Procedimento</th>';
+            for(let b of licBinLabels) headHtml += `<th>${b}</th>`;
+            document.getElementById('lic_base_header').innerHTML = headHtml;
+            let bodyHtml = '';
+            for(let p=0; p<currentProcedures.length; p++){
+                let gdhBadge = currentProcedures[p].has_gdh ? '<span class="badge-gdh ml-2">GDH</span>' : '';
+                bodyHtml += `<tr><td class="font-bold whitespace-nowrap text-left text-ubnic-text">${currentProcedures[p].name} ${gdhBadge}</td>`;
+                for(let b=0; b<16; b++) bodyHtml += `<td><input type="number" class="w-10 text-center !p-1 text-xs clinical-data bg-transparent" id="inp_lic_${p}_${b}" value="${currentProcedures[p].bins[b]}"></td>`;
+                bodyHtml += `</tr>`;
+            }
+            document.getElementById('lic_base_body').innerHTML = bodyHtml;
+            updateBaseTotals();
+            buildLosInputs();
+            renderFinTable();
+            renderEvents();
+        }
+
+        function updateBaseTotals() {
+            let tLec = 0; for(let i=0; i<9; i++) tLec += parseFloat(document.getElementById(`inp_lec_${i}`).value) || 0;
+            document.getElementById('tot_lec_base').innerText = Math.round(tLec);
+            let tLic = 0;
+            for(let p=0; p<currentProcedures.length; p++) for(let b=0; b<16; b++) tLic += parseFloat(document.getElementById(`inp_lic_${p}_${b}`).value) || 0;
+            document.getElementById('tot_lic_base').innerText = Math.round(tLic);
+        }
+
+        function reloadFromBase() {
+            for(let i=0; i<9; i++) currentLec[i] = parseFloat(document.getElementById(`inp_lec_${i}`).value) || 0;
+            for(let p=0; p<currentProcedures.length; p++) for(let b=0; b<16; b++) currentProcedures[p].bins[b] = parseFloat(document.getElementById(`inp_lic_${p}_${b}`).value) || 0;
+            toggleSection('sec_estado_inicial');
+            runSim();
+        }
+        document.getElementById('sec_estado_inicial').addEventListener('input', updateBaseTotals);
+
+        function isDateInRange(currDate, startStr, endStr) {
+            let startDate = new Date(2000, 0); 
+            if(startStr) { let [sY, sM] = startStr.split('-'); startDate = new Date(sY, sM - 1); }
+            let endDate = new Date(2099, 11);
+            if(endStr) { let [eY, eM] = endStr.split('-'); endDate = new Date(eY, eM - 1); }
+            return (currDate >= startDate && currDate <= endDate);
+        }
+
+        function runSim() {
+            const hrz = parseInt(document.getElementById('inp_horizonte').value) || 24;
+            const baseParams = {
+                pedidos: parseFloat(document.getElementById('inp_pedidos').value) || 0,
+                baseCons: parseFloat(document.getElementById('inp_base_consultas').value) || 0,
+                baseCirurgias: parseFloat(document.getElementById('inp_base_cirurgias').value) || 0,
+                baseSU: parseFloat(document.getElementById('inp_base_su').value) || 6,
+                altaBase: parseFloat(document.getElementById('inp_tx_alta').value) || 35,
+                txCirurgia: (parseFloat(document.getElementById('inp_tx_cirurgia').value) || 50) / 100,
+                novosLCA: parseFloat(document.getElementById('inp_novos_lca').value) || 0,
+                novosMen: parseFloat(document.getElementById('inp_novos_men').value) || 0,
+                exCons: parseFloat(document.getElementById('inp_extra_consultas').value) || 0,
+                ex3Med: parseFloat(document.getElementById('inp_extra_3med').value) || 0,
+                ex2Med2Curta: parseFloat(document.getElementById('inp_extra_2med2curta').value) || 0
+            };
+
+            let cfgEfi = 0;
+            if(document.getElementById('inc_efi_1').checked) cfgEfi += 2.5;
+            if(document.getElementById('inc_efi_2').checked) cfgEfi += 2.5;
+            if(document.getElementById('inc_efi_3').checked) cfgEfi += 2.5;
+            if(document.getElementById('inc_efi_4').checked) cfgEfi += 2.5;
+
+            let cfgL1_LIC_TMRG = parseFloat(document.getElementById('cfg_l1_lic_tmrg').value) || 93;
+            let cfgL2_LIC_TMRG = parseFloat(document.getElementById('cfg_l2_lic_tmrg').value) || 98;
+            let cfgL1_LIC_MAX = parseInt(document.getElementById('cfg_l1_lic_max').value) || 270;
+            let cfgL1_LEC_MAX = parseInt(document.getElementById('cfg_l1_lec_max').value) || 365;
+            let cfgL2_LEC_MAX = parseInt(document.getElementById('cfg_l2_lec_max').value) || 270;
+
+            let uiChanged = false;
+            plannedEvents.forEach(ev => {
+                if(ev.type === 'metric_change') {
+                    let novaAlta = ev.val_tx_alta !== undefined ? parseFloat(ev.val_tx_alta) : 15;
+                    let novosPedidos = Math.round((baseParams.pedidos * (1 - baseParams.altaBase/100)) / (1 - novaAlta/100));
+                    let novaTxCir = novosPedidos > 0 ? ((baseParams.pedidos * baseParams.txCirurgia) / novosPedidos) * 100 : 0;
+                    if(ev.val_pedidos !== novosPedidos || ev.val_tx_cir !== novaTxCir) {
+                        ev.val_pedidos = novosPedidos;
+                        ev.val_tx_cir = novaTxCir;
+                        uiChanged = true;
+                    }
+                }
+            });
+            if(uiChanged) renderEvents();
+
+            let totalCapBaseAgg = 0; let totalCapExtraAgg = 0;
+            let procs = JSON.parse(JSON.stringify(currentProcedures));
+            for(let p of procs) p.bins.push(0); 
+            
+            let lecQueue = [];
+            for(let i=0; i<9; i++) {
+                let count = currentLec[i];
+                if(count > 0) {
+                    let countPerMonth = count / 3;
+                    for(let j=2; j>=0; j--) { lecQueue.push({ age: (i*3) + j, count: countPerMonth, tx_cir: baseParams.txCirurgia }); }
+                }
+            }
+            lecQueue.sort((a,b) => b.age - a.age); 
+            
+            let hist = { labels: [], lecTotal: [], licTotal: [], 
+                lecBins: {'0-90':[], '90-180':[], '180-270':[], '270-360':[], '> 360':[]},
+                licBins: {'< 120 dias':[], '120-180 dias':[], '180-270 dias':[], '270-365 dias':[], '> 365 dias':[]}, 
+                procs: {}, rawLec: [], rawLic: [],
+                activity: { 
+                    lec_inBase: [], lec_inEvent: [], lec_outBaseNat: [], lec_outBaseEv: [], lec_outExtra: [],
+                    lic_fixoSU_in: [], lic_inSU: [], lic_inConsBase: [], lic_inConsExtra: [],
+                    lic_fixoSU_out: [], lec_outExtra: [],
+                    lic_outBaseNat: [], lic_outBaseEv: [], lic_outExtra: [], lic_outExt: []
+                },
+                costs: { base: [], adic: [], fora: [], ext: [] },
+                incentives: { access: [], efficiency: [], licUnder180Line: [], rawCriteria: [] },
+                bedsAvg: [], bedsPeak: [], bedsDow: [] 
+            };
+            for(let p of procs) hist.procs[p.name] = { has_gdh: p.has_gdh, b1:[], b2:[], b3:[], b4:[], b5:[], total:[], perc_over_180: 0 };
+            simHistory = []; 
+
+            let currentDate = new Date(2026, 8); 
+
+            for (let m = 1; m <= hrz; m++) {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                let lbl = currentDate.toLocaleString('pt-PT', { month: 'short', year: '2-digit' });
+                
+                let mPedidos = baseParams.pedidos;
+                let mTxCir = baseParams.txCirurgia;
+                let mAddConsBase = 0; let mAddConsExtra = 0;
+                let mAddCirBase = 0; let mAddCirExtra = 0;
+                let dowAddCirBase = 1; let dowAddCirExtra = 1;
+                let extPTJ=0, extPUC=0, extArtro=0, extEMO=0, opPTJFora=0;
+                let eventLogs = [];
+                let isMetricEvent = false;
+
+                plannedEvents.forEach(ev => {
+                    if(isDateInRange(currentDate, ev.start, ev.end)) {
+                        if(ev.type === 'metric_change') { 
+                            isMetricEvent = true;
+                            mPedidos = parseFloat(ev.val_pedidos) || mPedidos; 
+                            mTxCir = (parseFloat(ev.val_tx_cir) || (mTxCir*100)) / 100; 
+                            eventLogs.push(`Alt. Critérios Base (${ev.title})`);
+                        }
+                        else if(ev.type === 'add_cons_base') { mAddConsBase += parseFloat(ev.val) || 0; eventLogs.push(`±${ev.val} Cons Base (${ev.title})`); }
+                        else if(ev.type === 'add_cons_extra') { mAddConsExtra += parseFloat(ev.val) || 0; eventLogs.push(`±${ev.val} Cons Adic (${ev.title})`); }
+                        else if(ev.type === 'add_cir_base') { 
+                            mAddCirBase += parseFloat(ev.val) || 0; 
+                            dowAddCirBase = ev.dow !== undefined ? parseInt(ev.dow) : 1;
+                            eventLogs.push(`±${ev.val} Cir Base (${ev.title})`); 
+                        }
+                        else if(ev.type === 'add_cir_extra') { 
+                            mAddCirExtra += parseFloat(ev.val) || 0; 
+                            dowAddCirExtra = ev.dow !== undefined ? parseInt(ev.dow) : 1;
+                            eventLogs.push(`±${ev.val} Cir GDH (${ev.title})`); 
+                        }
+                        else if(ev.type === 'ext_gdh') { 
+                            extPTJ += Math.max(0, parseFloat(ev.val_ptj)||0); extPUC += Math.max(0, parseFloat(ev.val_puc)||0); extArtro += Math.max(0, parseFloat(ev.val_artro)||0); extEMO += Math.max(0, parseFloat(ev.val_emo)||0); 
+                            eventLogs.push(`Externalização GDH (${ev.title})`); 
+                        }
+                        else if(ev.type === 'op_ptj_fora') { opPTJFora += Math.max(0, parseFloat(ev.val)||0); eventLogs.push(`Op. PTJ Fora (${ev.title})`); }
+                    }
+                });
+
+                let consBaseTarget = baseParams.baseCons + mAddConsBase;
+                let consExtraTarget = baseParams.exCons + mAddConsExtra;
+                let mLog = { 
+                    lbl, events: eventLogs, 
+                    lec: {in: mPedidos, outBase: consBaseTarget, outExtra: consExtraTarget}, 
+                    lic: {in: 0, outBase: 0, outExtra: 0, outExt: 0, outFora: 0, procMap: {}}, 
+                    beds: { avg: 0, peak: 0, dow: [0,0,0,0,0,0,0] },
+                    costs: { base: 0, adic: 0, fora: 0, ext: 0 },
+                    incentives: { access: 0, efficiency: 0, total: 0, raw: {} }
+                };
+                procs.forEach(p => mLog.lic.procMap[p.name] = { base: 0, extra: 0, ext: 0, fora: 0, in: 0 });
+
+                lecQueue.forEach(c => c.age += 1); 
+                lecQueue.push({ age: 0, count: mPedidos, tx_cir: mTxCir }); 
+
+                let toConsumeCons = consBaseTarget + consExtraTarget;
+                let generated_indications = 0;
+
+                while(toConsumeCons > 0 && lecQueue.length > 0) {
+                    let c = lecQueue[0]; 
+                    if(c.count === 0) { lecQueue.shift(); continue; }
+                    if(c.count <= toConsumeCons) {
+                        generated_indications += c.count * c.tx_cir;
+                        toConsumeCons -= c.count;
+                        lecQueue.shift();
+                    } else {
+                        generated_indications += toConsumeCons * c.tx_cir;
+                        c.count -= toConsumeCons;
+                        toConsumeCons = 0;
+                    }
+                }
+                
+                let newLecBins = [0,0,0,0,0,0,0,0,0];
+                for(let c of lecQueue) { let b = Math.floor(c.age/3); if(b>8) b=8; newLecBins[b] += c.count; }
+
+                for(let p of procs) {
+                    let accMax = p.bins.pop(); let last30 = p.bins.pop();
+                    p.bins.unshift(0); p.bins.push(accMax + last30);
+                }
+
+                let totCons = consBaseTarget + consExtraTarget;
+                let ratioConsBase = totCons > 0 ? (consBaseTarget / totCons) : 1;
+                let insBase = generated_indications * ratioConsBase;
+                let insExtra = generated_indications * (1 - ratioConsBase);
+
+                for(let p of procs) {
+                    if (p.ratio > 0) {
+                        let entering = generated_indications * (p.ratio / BASE_RATIO_SUM);
+                        p.bins[0] += entering; 
+                        mLog.lic.in += entering;
+                        mLog.lic.procMap[p.name].in += entering;
+                    }
+                }
+                
+                let procs_lca = procs.find(p => p.name === 'LCA');
+                let procs_men = procs.find(p => p.name === 'Meniscos Jovens');
+                if(procs_lca) { procs_lca.bins[0] += baseParams.novosLCA; mLog.lic.in += baseParams.novosLCA; mLog.lic.procMap['LCA'].in += baseParams.novosLCA; }
+                if(procs_men) { procs_men.bins[0] += baseParams.novosMen; mLog.lic.in += baseParams.novosMen; mLog.lic.procMap['Meniscos Jovens'].in += baseParams.novosMen; }
+
+                let consumeOut = (slots, procName, outType) => {
+                    if (slots <= 0) return 0;
+                    let p = procs.find(x => x.name === procName);
+                    if(!p) return 0;
+                    let totalConsumed = 0;
+                    for (let binIdx = p.bins.length - 1; binIdx >= 0 && slots > 0; binIdx--) {
+                        if(p.bins[binIdx] > 0) {
+                            let c = Math.min(p.bins[binIdx], slots);
+                            p.bins[binIdx] -= c;
+                            slots -= c;
+                            totalConsumed += c;
+                        }
+                    }
+                    if(outType === 'ext') {
+                        mLog.lic.procMap[procName].ext += totalConsumed;
+                        mLog.lic.outExt += totalConsumed;
+                        mLog.costs.ext += totalConsumed * getCostUnit(p, 'ext', 0);
+                    } else if (outType === 'fora') {
+                        mLog.lic.procMap[procName].fora += totalConsumed;
+                        mLog.lic.outFora += totalConsumed;
+                    }
+                    return totalConsumed;
+                };
+
+                let uExtPTJ = consumeOut(extPTJ, 'PTJ', 'ext');
+                let uForaPTJ = consumeOut(opPTJFora, 'PTJ', 'fora');
+                let uExtPUC = consumeOut(extPUC, 'PUC', 'ext');
+                let uExtArt = consumeOut(extArtro, 'Artroscopia', 'ext');
+                let uExtEMO = consumeOut(extEMO, 'EMO', 'ext');
+
+                let mExtra = (baseParams.ex3Med * 3) + (baseParams.ex2Med2Curta * 2) + mAddCirExtra;
+                let cExtra = (baseParams.ex2Med2Curta * 2);
+                let totalExtraAvailable = mExtra + cExtra;
+                let rBase = baseParams.baseCirurgias + mAddCirBase;
+
+                totalCapBaseAgg += rBase;
+                totalCapExtraAgg += totalExtraAvailable;
+                
+                let licTotal = 0; let licUnder180 = 0; let licOver270 = 0;
+                for(let p of procs) {
+                    let sum = p.bins.reduce((a,b)=>a+b, 0);
+                    licTotal += sum;
+                    licUnder180 += p.bins.slice(0, 6).reduce((a,b)=>a+b, 0); 
+                    licOver270 += p.bins.slice(9).reduce((a,b)=>a+b, 0);
+                }
+                let percLicUnder180 = licTotal > 0 ? (licUnder180 / licTotal) * 100 : 100;
+                let lecTotal = newLecBins.reduce((a,b)=>a+b, 0);
+                let lecOver120 = (newLecBins[1]*(60/90)) + newLecBins.slice(2).reduce((a,b)=>a+b, 0);
+                let lecOver270 = newLecBins.slice(3).reduce((a,b)=>a+b, 0);
+                let lecOver365 = newLecBins.slice(4).reduce((a,b)=>a+b, 0);
+
+                let isExcMet = consExtraTarget >= totalExtraAvailable; 
+                let accInc = 0;
+                let level = 0;
+
+                let hitLic270 = licOver270 === 0;
+                let hitLec365 = lecOver365 === 0 || isExcMet;
+                let hitLec270 = lecOver270 === 0 || isExcMet;
+                let hitLec120 = lecOver120 === 0;
+                let isExtClear = mLog.lic.outExt === 0;
+
+                if(percLicUnder180 >= 100 && hitLec120 && isExtClear) {
+                    accInc = 15; level = 3;
+                } else if (percLicUnder180 >= cfgL2_LIC_TMRG && hitLic270 && hitLec270 && isExtClear) {
+                    accInc = 10; level = 2;
+                } else if (percLicUnder180 >= cfgL1_LIC_TMRG && hitLic270 && hitLec365) {
+                    accInc = 5; level = 1;
+                }
+                
+                let totInc = accInc + cfgEfi;
+                mLog.incentives = { 
+                    access: accInc, efficiency: cfgEfi, total: totInc, 
+                    raw: { 
+                        level, 
+                        percLicUnder180, 
+                        licOver270,
+                        lecOver365: Math.round(lecOver365),
+                        lecOver270: Math.round(lecOver270),
+                        lecOver120,
+                        consExtraTarget,
+                        totalExtraAvailable,
+                        isExcMet, 
+                        isExtClear 
+                    } 
+                };
+
+                for(let pName in mLog.lic.procMap) {
+                    if (mLog.lic.procMap[pName].fora > 0) {
+                        let procObj = procs.find(x=>x.name === pName);
+                        mLog.costs.fora += mLog.lic.procMap[pName].fora * getCostUnit(procObj, 'fora', totInc);
+                    }
+                }
+
+                let uBaseConsumed = 0; let uExtraConsumed = 0;
+                let daily_beds = [0,0,0,0,0,0,0]; 
+                let addBeds = (dayOfWeek, volumePerMonth, los) => {
+                    if(los <= 0 || volumePerMonth <= 0) return;
+                    let volPerWeek = volumePerMonth / 4;
+                    for(let i=0; i<los; i++) { daily_beds[(dayOfWeek + i) % 7] += volPerWeek; }
+                };
+
+                addBeds(2, 4.5, sysLOS.Trauma); 
+                addBeds(2, 1.5, sysLOS.Infeção);
+                let extra_surgeries_list = [];
+
+                for (let binIdx = procs[0].bins.length - 1; binIdx >= 0; binIdx--) {
+                    let consume = (slots, criteria, isExtra) => {
+                        if (slots <= 0) return 0;
+                        let available = 0; let matchProcs = [];
+                        for (let p of procs) if (criteria(p) && p.bins[binIdx] > 0) { available += p.bins[binIdx]; matchProcs.push(p); }
+                        if (available === 0) return 0;
+                        
+                        let totalConsumed = 0;
+                        let distribute = (p, c) => {
+                            if(isExtra) { 
+                                mLog.lic.procMap[p.name].extra += c; mLog.lic.outExtra += c;
+                                mLog.costs.adic += c * getCostUnit(p, 'adic', totInc);
+                                extra_surgeries_list.push({proc: p, count: c, dow: dowAddCirExtra});
+                            } else { 
+                                mLog.lic.procMap[p.name].base += c; mLog.lic.outBase += c; 
+                                mLog.costs.base += c * getCostUnit(p, 'base', 0);
+                                let ratioBaseNat = (baseParams.baseCirurgias + mAddCirBase) > 0 ? (baseParams.baseCirurgias / (baseParams.baseCirurgias + mAddCirBase)) : 1;
+                                let cNat = c * ratioBaseNat; let cEv = c * (1 - ratioBaseNat);
+                                addBeds(1, cNat / 2, p.los); addBeds(2, cNat / 2, p.los); 
+                                addBeds(dowAddCirBase, cEv, p.los); 
+                            }
+                            p.bins[binIdx] -= c; 
+                        };
+
+                        if (available <= slots) {
+                            for (let p of matchProcs) { distribute(p, p.bins[binIdx]); }
+                            totalConsumed = available;
+                        } else {
+                            let fraction = slots / available;
+                            for (let p of matchProcs) { distribute(p, p.bins[binIdx] * fraction); }
+                            totalConsumed = slots;
+                        }
+                        return totalConsumed;
+                    };
+
+                    let uE = consume(mExtra, p => p.has_gdh && p.duration === 'média', true); mExtra -= uE; uExtraConsumed += uE;
+                    let uC = consume(cExtra, p => p.has_gdh && p.duration === 'curta', true); cExtra -= uC; uExtraConsumed += uC;
+                    let uB = consume(rBase, p => true, false); rBase -= uB; uBaseConsumed += uB;
+
+                    if (mExtra === 0 && cExtra === 0 && rBase === 0) break; 
+                }
+
+                if(extra_surgeries_list.length > 0) {
+                    extra_surgeries_list.forEach(item => {
+                        addBeds(item.dow, item.count, item.proc.los);
+                    });
+                }
+
+                mLog.beds.dow = daily_beds.map(v => Math.round(v * 10)/10);
+                let sumBeds = daily_beds.reduce((a,b)=>a+b, 0);
+                mLog.beds.avg = Math.round((sumBeds / 7) * 10)/10;
+                mLog.beds.peak = Math.round(Math.max(...daily_beds) * 10)/10;
+
+                let ratioBaseNat = (baseParams.baseCirurgias + mAddCirBase) > 0 ? (baseParams.baseCirurgias / (baseParams.baseCirurgias + mAddCirBase)) : 1;
+                
+                hist.activity.lec_inBase.push(isMetricEvent ? 0 : mPedidos);
+                hist.activity.lec_inEvent.push(isMetricEvent ? mPedidos : 0);
+                hist.activity.lec_outBaseNat.push(baseParams.baseCons);
+                hist.activity.lec_outBaseEv.push(mAddConsBase);
+                hist.activity.lec_outExtra.push(consExtraTarget);
+                
+                hist.activity.lic_fixoSU_in.push(baseParams.baseSU); 
+                hist.activity.lic_inSU.push(baseParams.novosLCA + baseParams.novosMen);
+                hist.activity.lic_inConsBase.push(insBase);
+                hist.activity.lic_inConsExtra.push(insExtra);
+                
+                hist.activity.lic_fixoSU_out.push(baseParams.baseSU); 
+                hist.activity.lic_outBaseNat.push(uBaseConsumed * ratioBaseNat);
+                hist.activity.lic_outBaseEv.push(uBaseConsumed * (1 - ratioBaseNat));
+                hist.activity.lic_outExtra.push(uExtraConsumed);
+                hist.activity.lic_outExt.push(mLog.lic.outExt + mLog.lic.outFora);
+
+                hist.costs.base.push(mLog.costs.base);
+                hist.costs.adic.push(mLog.costs.adic);
+                hist.costs.fora.push(mLog.costs.fora);
+                hist.costs.ext.push(mLog.costs.ext);
+
+                hist.incentives.access.push(mLog.incentives.access);
+                hist.incentives.efficiency.push(mLog.incentives.efficiency);
+                hist.incentives.licUnder180Line.push(percLicUnder180);
+                hist.incentives.rawCriteria.push(mLog.incentives.raw);
+
+                hist.bedsAvg.push(mLog.beds.avg);
+                hist.bedsPeak.push(mLog.beds.peak);
+                hist.bedsDow.push(mLog.beds.dow);
+
+                simHistory.push(mLog);
+                saveState(hist, lbl, procs, newLecBins);
+            }
+
+            document.getElementById('kpi_racio_cir').innerText = totalCapBaseAgg > 0 ? (totalCapExtraAgg / totalCapBaseAgg).toFixed(2) + "x" : "∞";
+            renderDashboard(hist, hrz);
+        }
+
+        function saveState(h, lbl, procs, lecBins) {
+            h.labels.push(lbl);
+            let sLec = Math.round(lecBins.reduce((a, b) => a + b, 0));
+            h.lecTotal.push(sLec);
+            let lecOver120 = (lecBins[1]*0.66) + lecBins[2] + lecBins[3] + lecBins[4] + lecBins[5] + lecBins[6] + lecBins[7] + lecBins[8];
+            h.rawLec.push({ total: sLec, over120: lecOver120 });
+            h.lecBins['0-90'].push(Math.round(lecBins[0])); h.lecBins['90-180'].push(Math.round(lecBins[1]));
+            h.lecBins['180-270'].push(Math.round(lecBins[2])); h.lecBins['270-360'].push(Math.round(lecBins[3]));
+            h.lecBins['> 360'].push(Math.round(lecBins[4]+lecBins[5]+lecBins[6]+lecBins[7]+lecBins[8]));
+            
+            let sLic = 0; let licOver180 = 0;
+            let lB = {'< 120 dias':0, '120-180 dias':0, '180-270 dias':0, '270-365 dias':0, '> 365 dias':0};
+            
+            for(let p of procs) {
+                let pb1=0, pb2=0, pb3=0, pb4=0, pb5=0, procOver180=0, pSum=0;
+                for(let i=0; i<p.bins.length; i++) {
+                    let v = p.bins[i]; sLic += v; pSum += v;
+                    if(i < 4) { lB['< 120 dias'] += v; pb1 += v; }
+                    else if(i < 6) { lB['120-180 dias'] += v; pb2 += v; }
+                    else if(i < 9) { lB['180-270 dias'] += v; pb3 += v; licOver180 += v; procOver180 += v; }
+                    else if(i < 12) { lB['270-365 dias'] += v; pb4 += v; licOver180 += v; procOver180 += v; }
+                    else { lB['> 365 dias'] += v; pb5 += v; licOver180 += v; procOver180 += v; }
+                }
+                h.procs[p.name].b1.push(Math.round(pb1)); h.procs[p.name].b2.push(Math.round(pb2));
+                h.procs[p.name].b3.push(Math.round(pb3)); h.procs[p.name].b4.push(Math.round(pb4));
+                h.procs[p.name].b5.push(Math.round(pb5)); h.procs[p.name].total.push(Math.round(pSum));
+                h.procs[p.name].perc_over_180 = pSum > 0 ? Math.round((procOver180 / pSum) * 100) : 0;
+            }
+            sLic = Math.round(sLic);
+            h.licTotal.push(sLic);
+            h.rawLic.push({ total: sLic, over180: licOver180 });
+            Object.keys(lB).forEach(k => h.licBins[k].push(Math.round(lB[k])));
+        }
+
+        function renderDashboard(h, hrz) {
+            let lastIdx = hrz - 1;
+            let startLec = h.rawLec[0].total; let endLec = h.rawLec[lastIdx].total;
+            let diffLec = Math.round(endLec - startLec); let accLecStr = (diffLec / hrz).toFixed(1);
+            let startLic = h.rawLic[0].total; let endLic = h.rawLic[lastIdx].total;
+            let diffLic = Math.round(endLic - startLic); let accLicStr = (diffLic / hrz).toFixed(1);
+
+            document.getElementById('kpi_lec_target').innerText = Math.round(endLec);
+            document.getElementById('kpi_lic_target').innerText = Math.round(endLic);
+            document.getElementById('kpi_lec_delta').innerHTML = diffLec > 0 ? `<span class="delta-pos">▲ +${diffLec}</span> vs Hoje` : `<span class="delta-neg">▼ ${Math.abs(diffLec)}</span> vs Hoje`;
+            document.getElementById('kpi_lic_delta').innerHTML = diffLic > 0 ? `<span class="delta-pos">▲ +${diffLic}</span> vs Hoje` : `<span class="delta-neg">▼ ${Math.abs(diffLic)}</span> vs Hoje`;
+            document.getElementById('kpi_acumulacao_lec').innerText = accLecStr > 0 ? "+" + accLecStr : accLecStr;
+            document.getElementById('kpi_acumulacao_lec').className = accLecStr > 0 ? "delta-pos clinical-data" : "delta-neg clinical-data";
+            document.getElementById('kpi_acumulacao_lic').innerText = accLicStr > 0 ? "+" + accLicStr : accLicStr;
+            document.getElementById('kpi_acumulacao_lic').className = accLicStr > 0 ? "delta-pos clinical-data" : "delta-neg clinical-data";
+            document.getElementById('kpi_perc_lec_120').innerText = h.rawLec[lastIdx].total > 0 ? Math.round(h.rawLec[lastIdx].over120 / h.rawLec[lastIdx].total * 100) : 0;
+            document.getElementById('kpi_perc_lic_180').innerText = h.rawLic[lastIdx].total > 0 ? Math.round(h.rawLic[lastIdx].over180 / h.rawLic[lastIdx].total * 100) : 0;
+
+            const baseOptionsStock = { 
+                maintainAspectRatio: false, 
+                layout: { padding: { left: 10, right: 10 } },
+                scales: { x: { stacked: true, grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, y: { stacked: true, border: {display: false} } }, 
+                plugins: { 
+                    legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}},
+                    tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false }
+                },
+                onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+            };
+
+            if(chartLicBinsInstance) chartLicBinsInstance.destroy();
+            chartLicBinsInstance = new Chart(document.getElementById('chartLicBins'), {
+                type: 'bar', data: { labels: h.labels, datasets: Object.keys(h.licBins).map((k, i) => ({ label: k, data: h.licBins[k], backgroundColor: colorsLic[i], borderRadius: 4, borderSkipped: false })) }, options: baseOptionsStock
+            });
+
+            const colorsLec = ['#2ecc71', '#eab308', '#e67e22', '#e11d48', '#881337'];
+            if(chartLecBinsInstance) chartLecBinsInstance.destroy();
+            chartLecBinsInstance = new Chart(document.getElementById('chartLecBins'), {
+                type: 'bar', data: { labels: h.labels, datasets: Object.keys(h.lecBins).map((k, i) => ({ label: k, data: h.lecBins[k], backgroundColor: colorsLec[i], borderRadius: 4, borderSkipped: false })) }, options: baseOptionsStock
+            });
+
+            const activityOptions = { 
+                maintainAspectRatio: false, 
+                layout: { padding: { left: 10, right: 10 } },
+                scales: { x: { stacked: true, grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, y: { stacked: true, border: {display: false} } }, 
+                plugins: { 
+                    legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, 
+                    tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false } 
+                },
+                onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+            };
+
+            if(chartLecActivityInstance) chartLecActivityInstance.destroy();
+            chartLecActivityInstance = new Chart(document.getElementById('chartLecActivity'), {
+                type: 'bar',
+                data: {
+                    labels: h.labels,
+                    datasets: [
+                        { label: 'Pedidos (Base)', data: h.activity.lec_inBase, backgroundColor: '#93c5fd', stack: 'Stack 0', borderRadius: 4 },
+                        { label: 'Pedidos (Evento)', data: h.activity.lec_inEvent, backgroundColor: '#3b82f6', stack: 'Stack 0', borderRadius: 4 },
+                        { label: 'Cons. Base (Natural)', data: h.activity.lec_outBaseNat, backgroundColor: '#86efac', stack: 'Stack 1', borderRadius: 2 },
+                        { label: 'Cons. Base (Evento)', data: h.activity.lec_outBaseEv, backgroundColor: '#22c55e', stack: 'Stack 1', borderRadius: 2 },
+                        { label: 'Cons. Adicional', data: h.activity.lec_outExtra, backgroundColor: '#166534', stack: 'Stack 1', borderRadius: 2 }
+                    ]
+                },
+                options: activityOptions
+            });
+
+            if(chartLicActivityInstance) chartLicActivityInstance.destroy();
+            chartLicActivityInstance = new Chart(document.getElementById('chartLicActivity'), {
+                type: 'bar',
+                data: {
+                    labels: h.labels,
+                    datasets: [
+                        { label: 'SU Fixo (Base)', data: h.activity.lic_fixoSU_in, backgroundColor: '#cbd5e1', stack: 'Stack 0' },
+                        { label: 'Insc. SU (LCA/Men)', data: h.activity.lic_inSU, backgroundColor: '#fb923c', stack: 'Stack 0' },
+                        { label: 'Insc. Cons Base', data: h.activity.lic_inConsBase, backgroundColor: '#fca5a5', stack: 'Stack 0' },
+                        { label: 'Insc. Cons Extra', data: h.activity.lic_inConsExtra, backgroundColor: '#dc2626', stack: 'Stack 0', borderRadius: 4 },
+                        
+                        { label: 'SU Fixo (Base)', data: h.activity.lic_fixoSU_out, backgroundColor: '#cbd5e1', stack: 'Stack 1' },
+                        { label: 'Cir. Base (Natural)', data: h.activity.lic_outBaseNat, backgroundColor: '#5eead4', stack: 'Stack 1' },
+                        { label: 'Cir. Base (Evento)', data: h.activity.lic_outBaseEv, backgroundColor: '#14b8a6', stack: 'Stack 1' },
+                        { label: 'Cir. Adicional', data: h.activity.lic_outExtra, backgroundColor: '#0f766e', stack: 'Stack 1', borderRadius: 2 },
+                        { label: 'Cir. Externalizada/Fora', data: h.activity.lic_outExt, backgroundColor: '#8b5cf6', stack: 'Stack 1', borderRadius: 4 }
+                    ]
+                },
+                options: activityOptions
+            });
+            
+            // GRÁFICO DE INCENTIVOS COM EFICIÊNCIA EMBAIXO E ACESSO EM CIMA (SEM EIXO DIREITO)
+            if(chartIncentivesInstance) chartIncentivesInstance.destroy();
+            chartIncentivesInstance = new Chart(document.getElementById('chartIncentives'), {
+                type: 'bar',
+                data: {
+                    labels: h.labels,
+                    datasets: [
+                        { label: 'Eficiência Global (%)', data: h.incentives.efficiency, backgroundColor: '#c084fc', stack: 'Stack 0', borderRadius: 2 },
+                        { label: 'Nível de Acesso (%)', data: h.incentives.access, backgroundColor: '#a855f7', stack: 'Stack 0', borderRadius: 4 }
+                    ]
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    layout: { padding: { left: 10, right: 10 } },
+                    scales: { 
+                        x: { stacked: true, grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, 
+                        y: { stacked: true, beginAtZero: true, max: 25, border: {display: false}, position: 'left', title: {display: true, text: '% Incentivo', font: {size: 9}} }
+                    }, 
+                    plugins: { 
+                        legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, 
+                        tooltip: { 
+                            mode: 'index', intersect: false, external: customExternalTooltip, enabled: false,
+                            callbacks: {
+                                label: function(c) {
+                                    return c.dataset.label + ': ' + c.raw + '%'; 
+                                },
+                                footer: function(items) {
+                                    if(items.length > 0) {
+                                        let idx = items[0].dataIndex;
+                                        let raw = h.incentives.rawCriteria[idx];
+                                        if(!raw) return '';
+                                        let nextLvl = raw.level === 3 ? 3 : raw.level + 1;
+                                        let failStr = raw.level === 3 ? "Todos os critérios atingidos!" : `Falhou os critérios exigidos para o Nível ${nextLvl}.`;
+                                        let licLineStr = `Taxa LIC < TMRG: ${raw.percLicUnder180.toFixed(1)}%`;
+                                        return `${licLineStr}\n[Diagnóstico]: Nível ${raw.level} Atingido\n${failStr}\n(Clica na coluna para abrir detalhe do mês)`;
+                                    }
+                                    return '';
+                                }
+                            } 
+                        } 
+                    },
+                    onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+                }
+            });
+
+            if(chartBedsInstance) chartBedsInstance.destroy();
+            chartBedsInstance = new Chart(document.getElementById('chartBeds'), {
+                type: 'line',
+                data: {
+                    labels: h.labels,
+                    datasets: [
+                        { type: 'bar', label: 'Ocupação Média/Dia', data: h.bedsAvg, backgroundColor: '#99f6e4', borderRadius: 4 },
+                        { type: 'line', label: 'Pico Máximo (Internados em Simultâneo)', data: h.bedsPeak, borderColor: '#0f766e', backgroundColor: '#0f766e', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#fff', fill: false, tension: 0.3 }
+                    ]
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    layout: { padding: { left: 10, right: 10 } },
+                    scales: { x: { grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, y: { border: {display: false}, beginAtZero: true, suggestedMax: Math.max(...h.bedsPeak) + 2 } }, 
+                    plugins: { 
+                        legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, 
+                        tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false } 
+                    },
+                    onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+                }
+            });
+
+            let totalCost = h.costs.base.reduce((a,b)=>a+b, 0) + h.costs.adic.reduce((a,b)=>a+b, 0) + h.costs.fora.reduce((a,b)=>a+b, 0) + h.costs.ext.reduce((a,b)=>a+b, 0);
+            document.getElementById('kpi_cost_total').innerText = currFormat.format(totalCost);
+            document.getElementById('kpi_cost_month').innerText = currFormat.format(totalCost / hrz);
+            document.getElementById('kpi_cost_year').innerText = currFormat.format((totalCost / hrz) * 12);
+
+            if(chartCostsInstance) chartCostsInstance.destroy();
+            chartCostsInstance = new Chart(document.getElementById('chartCosts'), {
+                type: 'bar',
+                data: {
+                    labels: h.labels,
+                    datasets: [
+                        { label: 'Custo Base', data: h.costs.base, backgroundColor: '#cbd5e1', stack: 'Stack 0' },
+                        { label: 'Custo Adicional', data: h.costs.adic, backgroundColor: '#93c5fd', stack: 'Stack 0' },
+                        { label: 'Custo Operar Fora', data: h.costs.fora, backgroundColor: '#c084fc', stack: 'Stack 0' },
+                        { label: 'Custo Externalização', data: h.costs.ext, backgroundColor: '#7e22ce', stack: 'Stack 0', borderRadius: 4 }
+                    ]
+                },
+                options: { 
+                    maintainAspectRatio: false, 
+                    layout: { padding: { left: 10, right: 10 } },
+                    scales: { x: { stacked: true, grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, y: { stacked: true, border: {display: false} } }, 
+                    plugins: { 
+                        legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, 
+                        tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false, callbacks: { label: function(context) { return context.dataset.label + ': ' + currFormat.format(context.raw); } } } 
+                    },
+                    onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+                }
+            });
+
+            let gridHtml = ''; let procKeys = Object.keys(h.procs);
+            for(let k of procKeys) {
+                let badge = h.procs[k].has_gdh ? '<span class="badge-gdh">GDH</span>' : '';
+                let alertClass = h.procs[k].perc_over_180 > 25 ? 'badge-alert' : 'text-slate-400 font-normal bg-white border border-slate-100 px-1 py-0.5 rounded';
+                let volFinalVal = h.procs[k].total[lastIdx] !== undefined ? h.procs[k].total[lastIdx] : 0;
+                gridHtml += `<div class="bg-white/80 rounded-xl border border-white p-4 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex justify-between items-center mb-1"><h4 class="text-[0.65rem] font-bold text-ubnic-text uppercase tracking-widest">${k} ${badge}</h4></div>
+                    <div class="flex justify-between items-end mb-3"><span class="text-[0.65rem] text-slate-500 font-medium">Vol Final: <b class="text-ubnic-dark text-lg clinical-data ml-1">${volFinalVal}</b></span><span class="${alertClass} text-[0.6rem]">>${h.procs[k].perc_over_180}% f/tempo</span></div>
+                    <div class="proc-chart-container"><canvas id="c_${k.replace(/ /g,'_')}"></canvas></div>
+                </div>`;
+            }
+            document.getElementById('proc_charts_grid').innerHTML = gridHtml;
+            Object.values(procChartInstances).forEach(c => c.destroy()); procChartInstances = {};
+            
+            for(let k of procKeys) {
+                let ctx = document.getElementById(`c_${k.replace(/ /g,'_')}`);
+                procChartInstances[k] = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: h.labels, datasets: [ { label: labelsLicTarget[0], data: h.procs[k].b1, backgroundColor: colorsLic[0], borderRadius: 2 }, { label: labelsLicTarget[1], data: h.procs[k].b2, backgroundColor: colorsLic[1], borderRadius: 2 }, { label: labelsLicTarget[2], data: h.procs[k].b3, backgroundColor: colorsLic[2], borderRadius: 2 }, { label: labelsLicTarget[3], data: h.procs[k].b4, backgroundColor: colorsLic[3], borderRadius: 2 }, { label: labelsLicTarget[4], data: h.procs[k].b5, backgroundColor: colorsLic[4], borderRadius: 2 } ] },
+                    options: { maintainAspectRatio: false, plugins: { legend: {display:false}, tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false, callbacks: {title:()=>null}} }, scales: { x: {stacked:true, display:false}, y:{stacked:true, beginAtZero: true, border:{display:false}, grid:{display:false}, ticks:{font:{family: "'IBM Plex Mono', monospace", size:8}, maxTicksLimit: 5}} } }
+                });
+            }
+        }
+
+        function handleChartClick(evt, chartObj) {
+            const points = chartObj.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+            if (points.length) { openModal(points[0].index); }
+        }
+
+        function buildChecklistRow(condition, text, subtext) {
+            let icon = condition ? '<span class="check-icon">✓</span>' : '<span class="cross-icon">✕</span>';
+            let bgClass = condition ? 'bg-green-50/50 border-green-100' : 'bg-red-50/50 border-red-100';
+            let txtClass = condition ? 'text-slate-700' : 'text-red-700';
+            return `
+            <div class="flex items-start gap-3 p-2 rounded-lg border ${bgClass}">
+                <div class="mt-0.5">${icon}</div>
+                <div>
+                    <div class="text-xs font-bold ${txtClass}">${text}</div>
+                    ${subtext ? `<div class="text-[0.65rem] text-slate-500 mt-0.5">${subtext}</div>` : ''}
+                </div>
+            </div>`;
+        }
+
+        function openModal(index) {
+            const log = simHistory[index];
+            if(!log) return;
+            document.getElementById('modalTitleDate').innerText = log.lbl;
+            
+            const raw = log.incentives.raw;
+            let levelColor = 'bg-slate-400';
+            if (raw.level === 3) levelColor = 'bg-green-500';
+            else if (raw.level === 2) levelColor = 'bg-blue-500';
+            else if (raw.level === 1) levelColor = 'bg-yellow-500';
+            else if (raw.level === 0) levelColor = 'bg-red-500';
+
+            document.getElementById('modAccLevelBadge').className = `text-3xl font-extrabold text-white px-6 py-2 rounded-xl shadow-sm mb-2 ${levelColor}`;
+            document.getElementById('modAccLevelBadge').innerText = `Nível ${raw.level}`;
+            document.getElementById('modAccPercGain').innerText = `+${log.incentives.access}%`;
+
+            let cfgL1 = parseFloat(document.getElementById('cfg_l1_lic_tmrg').value) || 93;
+            let cfgL2 = parseFloat(document.getElementById('cfg_l2_lic_tmrg').value) || 98;
+            
+            let targetLvl = raw.level === 3 ? 3 : raw.level + 1;
+            let headerText = raw.level === 3 ? "Critérios Nível 3 (Todos Atingidos)" : `O que falhou para o Nível ${targetLvl}?`;
+            document.getElementById('modAccCriteriaTitle').innerText = headerText;
+            
+            let clist = '';
+            let altLecText = `(Alternativa: Zero doentes ou consultas adicionais [${Math.round(raw.consExtraTarget)}] ≥ cirurgias adicionais [${Math.round(raw.totalExtraAvailable)}])`;
+
+            if (targetLvl === 3) {
+                let licCond = raw.percLicUnder180 >= 100;
+                clist += buildChecklistRow(licCond, `LIC < TMRG: ${raw.percLicUnder180.toFixed(1)}%`, `Exigência Nível 3: 100%`);
+                
+                let lecCond = raw.lecOver120 === 0;
+                clist += buildChecklistRow(lecCond, `LEC > 120 Dias: ${Math.round(raw.lecOver120)} utentes`, `Exigência Nível 3: Zero doentes > 120 dias`);
+                
+                clist += buildChecklistRow(raw.isExtClear, `Externalização GDH: ${raw.isExtClear ? 'Zero' : 'Ativa'}`, `Exigência Nível 3: Sem externalização no mês`);
+            } 
+            else if (targetLvl === 2) {
+                let licCond = raw.percLicUnder180 >= cfgL2;
+                clist += buildChecklistRow(licCond, `LIC < TMRG: ${raw.percLicUnder180.toFixed(1)}%`, `Exigência Nível 2: ≥ ${cfgL2}%`);
+                
+                let lic270Cond = raw.licOver270 === 0;
+                clist += buildChecklistRow(lic270Cond, `LIC > 270 Dias: ${Math.round(raw.licOver270)} utentes`, `Exigência Nível 2: Zero doentes > 270 dias na LIC`);
+
+                let lec270Cond = raw.lecOver270 === 0 || raw.isExcMet;
+                clist += buildChecklistRow(lec270Cond, `LEC > 270 Dias: ${Math.round(raw.lecOver270)} utentes`, `Exigência Nível 2: Zero doentes > 270 dias na LEC <br><span class="text-[0.6rem] text-slate-500 italic">${altLecText}</span>`);
+                
+                clist += buildChecklistRow(raw.isExtClear, `Externalização GDH: ${raw.isExtClear ? 'Zero' : 'Ativa'}`, `Exigência Nível 2: Sem externalização no mês`);
+            }
+            else if (targetLvl === 1) {
+                let licCond = raw.percLicUnder180 >= cfgL1;
+                clist += buildChecklistRow(licCond, `LIC < TMRG: ${raw.percLicUnder180.toFixed(1)}%`, `Exigência Nível 1: ≥ ${cfgL1}%`);
+                
+                let lic270Cond = raw.licOver270 === 0;
+                clist += buildChecklistRow(lic270Cond, `LIC > 270 Dias: ${Math.round(raw.licOver270)} utentes`, `Exigência Nível 1: Zero doentes > 270 dias na LIC`);
+
+                let lec365Cond = raw.lecOver365 === 0 || raw.isExcMet;
+                clist += buildChecklistRow(lec365Cond, `LEC > 365 Dias: ${raw.lecOver365} utentes`, `Exigência Nível 1: Zero doentes > 365 dias na LEC <br><span class="text-[0.6rem] text-slate-500 italic">${altLecText}</span>`);
+            }
+            
+            document.getElementById('modAccCriteriaList').innerHTML = clist;
+
+            document.getElementById('modLecIn').innerText = `+ ${log.lec.in}`;
+            document.getElementById('modLecOut').innerText = `- ${log.lec.outBase + log.lec.outExtra}`;
+            document.getElementById('modLecBreakdown').innerHTML = `<span class="font-bold text-blue-900">${log.lec.outBase}</span> base + <span class="font-bold text-ubnic">${log.lec.outExtra}</span> adicionais.`;
+            
+            document.getElementById('modLicIn').innerText = `+ ${Math.round(log.lic.in)}`;
+            let totOut = Math.round(log.lic.outBase + log.lic.outExtra);
+            document.getElementById('modLicOut').innerText = `- ${totOut}`;
+            document.getElementById('modLicBreakdownText').innerHTML = `<span class="font-bold text-ubnic-text">${Math.round(log.lic.outBase)}</span> blocos base + <span class="font-bold text-ubnic">${Math.round(log.lic.outExtra)}</span> adicionais.`;
+            
+            document.getElementById('modLicBreakdownExt').innerText = log.lic.outExt > 0 ? `+ ${Math.round(log.lic.outExt)} operados externamente.` : '';
+            document.getElementById('modLicBreakdownFora').innerText = log.lic.outFora > 0 ? `+ ${Math.round(log.lic.outFora)} operados fora.` : '';
+
+            document.getElementById('modCostBase').innerText = currFormat.format(log.costs.base);
+            document.getElementById('modCostAdic').innerText = currFormat.format(log.costs.adic);
+            document.getElementById('modCostFora').innerText = currFormat.format(log.costs.fora);
+            document.getElementById('modCostExt').innerText = currFormat.format(log.costs.ext);
+
+            if(log.events.length > 0) {
+                document.getElementById('modEventsMasterBox').classList.remove('hidden');
+                document.getElementById('modEventsText').innerHTML = log.events.map(e => `&bull; ${e}`).join('<br>');
+            } else {
+                document.getElementById('modEventsMasterBox').classList.add('hidden');
+            }
+
+            document.getElementById('modBedsKpi').innerText = `${log.beds.avg} / ${log.beds.peak}`;
+            if(modChartBedsDowInstance) modChartBedsDowInstance.destroy();
+            modChartBedsDowInstance = new Chart(document.getElementById('modChartBedsDow'), {
+                type: 'bar',
+                data: { labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'], datasets: [{ data: log.beds.dow, backgroundColor: '#14b8a6', borderRadius: 4 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: {display:false} }, scales: { x: { grid: {display:false}, ticks:{font:{size:9}} }, y: { display:false, beginAtZero: true } } }
+            });
+
+            let procsHtml = '';
+            let remHtml = '';
+            const gdhProcedureNames = ['PTJ', 'PUC', 'EMO', 'Artroscopia'];
+
+            for(let pName in log.lic.procMap) {
+                let v = log.lic.procMap[pName];
+                let inTotal = Math.round(v.in);
+                let outTotal = Math.round(v.base + v.extra);
+                
+                if(inTotal > 0 || outTotal > 0 || v.ext > 0 || v.fora > 0) {
+                    let tags = '';
+                    if (v.ext > 0) tags += `<div class="text-[0.55rem] font-bold text-purple-600 bg-purple-50 rounded mt-1 border border-purple-100">${Math.round(v.ext)} Ext.</div>`;
+                    if (v.fora > 0) tags += `<div class="text-[0.55rem] font-bold text-pink-600 bg-pink-50 rounded mt-1 border border-pink-100">${Math.round(v.fora)} Fora</div>`;
+
+                    procsHtml += `<div class="bg-white border border-slate-200 p-3 rounded-xl shadow-sm text-center flex flex-col justify-between">
+                        <div>
+                            <div class="text-[0.65rem] uppercase font-bold text-slate-500 truncate mb-3">${pName}</div>
+                            <div class="flex justify-around items-center">
+                                <div><div class="text-[0.6rem] text-slate-400 font-medium uppercase tracking-wide">Insc</div><div class="text-xl font-bold text-ubnic-alert clinical-data">+${inTotal}</div></div>
+                                <div class="w-px h-8 bg-slate-100"></div>
+                                <div><div class="text-[0.6rem] text-slate-400 font-medium uppercase tracking-wide">Op</div><div class="text-xl font-bold text-ubnic-success clinical-data">-${outTotal}</div></div>
+                            </div>
+                            <div class="text-[0.55rem] text-slate-400 mt-2 bg-slate-50 py-1 rounded">(${Math.round(v.base)} B | ${Math.round(v.extra)} Adic)</div>
+                        </div>
+                        <div class="mt-1">${tags}</div>
+                    </div>`;
+                }
+            }
+
+            gdhProcedureNames.forEach(pName => {
+                let pDef = currentProcedures.find(x => x.name === pName);
+                if (pDef) {
+                    let baseGDH = pDef.gdh_total || 0;
+                    if(pName === 'PTJ' || pName === 'PUC') baseGDH = Math.max(0, baseGDH - 1367.40);
+                    
+                    let unitEquipa = baseGDH * ((pDef.perc_equipa + log.incentives.total)/100);
+                    let percCirurgioes = pName === 'PTJ' ? 0.5035 : 0.4775;
+                    let unitCirurgioes = unitEquipa * percCirurgioes;
+                    
+                    remHtml += `<tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="font-bold text-left py-2 px-2">${pName}</td>
+                        <td class="clinical-data text-purple-700 font-bold">${currFormat.format(unitEquipa)}</td>
+                        <td class="clinical-data">${currFormat.format(unitCirurgioes)}</td>
+                        <td class="clinical-data text-slate-500">${currFormat.format(unitCirurgioes * 0.50)}</td>
+                        <td class="clinical-data text-slate-500">${currFormat.format(unitCirurgioes * 0.60)}</td>
+                        <td class="clinical-data text-slate-500">${currFormat.format(unitCirurgioes * 0.70)}</td>
+                    </tr>`;
+                }
+            });
+
+            if(procsHtml==='') procsHtml = '<div class="col-span-4 text-center text-slate-400 py-8 bg-slate-50 rounded-xl italic">Nenhuma atividade cirúrgica ou de inscrição neste mês.</div>';
+            document.getElementById('modProcsGrid').innerHTML = procsHtml;
+
+            document.getElementById('modRemuneracaoMasterBox').classList.remove('hidden');
+            document.getElementById('modRemuneracaoBody').innerHTML = remHtml;
+            document.getElementById('modRemIncBadge').innerText = `+${log.incentives.total}%`;
+            
+            document.getElementById('monthModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('monthModal').classList.add('hidden'); }
+
+        initBaseTables();
+        runSim();
+    </script>
+</body>
+</html>
