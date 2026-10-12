@@ -104,7 +104,7 @@
             <div id="sec_estado_inicial" class="collapse-content mt-6 border-t border-slate-200/60 pt-6">
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
                     <div class="xl:col-span-3">
-                        <h3 class="font-bold text-ubnic-text mb-3 flex justify-between items-center"><span>LEC Atual</span><span class="bg-blue-50 border border-blue-100 px-2 py-0.5 rounded text-blue-700 text-xs">Total: <span id="tot_lec_base" class="clinical-data">1480</span></span></h3>
+                        <h3 class="font-bold text-ubnic-text mb-3 flex justify-between items-center"><span>LEC Atual</span><span class="bg-blue-50 border border-blue-100 px-2 py-0.5 rounded text-blue-700 text-xs">Total: <span id="tot_lec_base" class="clinical-data">1921</span></span></h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-2 gap-3" id="lec_base_inputs"></div>
                     </div>
                     <div class="xl:col-span-9 overflow-x-auto">
@@ -541,7 +541,8 @@
             {"name": "Osteotomia", "ratio": 0.0075, "duration": "média", "has_gdh": false, "los": 3, "bins": [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0},
             {"name": "Outros", "ratio": 0.0149, "duration": "média", "has_gdh": false, "los": 2, "bins": [2, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], material: 0, gdh_total: 0, perc_equipa: 0, custo_interno: 0, taxa_fora: 0, custo_ext: 0}
         ];
-        const defaultLec = [276, 276, 276, 276, 276, 100, 0, 0, 0];
+        // Updated LEC defaults from the image: 279, 279, 279, 300, 280, 280, 224, 0, 0
+        const defaultLec = [279, 279, 279, 300, 280, 280, 224, 0, 0];
         const lecLabels = ['0-90', '90-180', '180-270', '270-360', '360-450', '450-540', '540-630', '630-720', '>720'];
         const licBinLabels = ['<30', '30-60', '60-90', '90-120', '120-150', '150-180', '180-210', '210-240', '240-270', '270-300', '300-330', '330-360', '360-390', '390-420', '420-450', '450-480'];
         const BASE_RATIO_SUM = 0.506; 
