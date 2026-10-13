@@ -35,7 +35,7 @@
         th { text-align: center; font-weight: 700; padding: 0.5rem; border-bottom: 2px solid #e2e8f0; color: #475569; font-family: 'Inter', sans-serif; }
         td { padding: 0.25rem; border-bottom: 1px solid #f1f5f9; }
         
-        .proc-chart-container { position: relative; height: 120px; width: 100%; }
+        .proc-chart-container { position: relative; height: 100px; width: 100%; }
         .main-chart-container { position: relative; height: 280px; width: 100%; cursor: pointer; }
         
         .badge-gdh { background-color: rgba(59, 135, 123, 0.1); color: #2a6058; font-size: 0.6rem; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: 800; }
@@ -88,7 +88,7 @@
                 </svg>
                 <div>
                     <h1 class="text-3xl font-extrabold text-ubnic-text tracking-tight mb-1">Painel Estratégico & Internamento</h1>
-                    <p class="text-slate-500 text-xs">UBNIC Medical Platform &middot; Modelo Determinístico de Coortes &middot; <b class="text-ubnic">Clique nos gráficos para detalhe mensal.</b>[cite: 36]</p>
+                    <p class="text-slate-500 text-xs">UBNIC Medical Platform &middot; Modelo Determinístico de Coortes &middot; <b class="text-ubnic">Clique nos gráficos para detalhe mensal.</b></p>
                 </div>
             </div>
             <div class="w-full md:w-64 glass-panel !p-3 !py-2 !rounded-xl">
@@ -193,7 +193,6 @@
                             <div><label>Limite Tolerância LEC N1</label><div class="relative"><input type="number" id="cfg_l1_lec_max" value="365" onchange="runSim()" class="clinical-data"><span class="absolute right-3 top-1 text-slate-400 text-xs">Dias</span></div></div>
                             <div class="col-span-2"><label>Limite Tolerância LEC N2</label><div class="relative w-1/2 pr-2"><input type="number" id="cfg_l2_lec_max" value="270" onchange="runSim()" class="clinical-data"><span class="absolute right-5 top-1 text-slate-400 text-xs">Dias</span></div></div>
                         </div>
-                        <p class="text-[0.55rem] text-slate-400 mt-3 leading-tight">* Nível 3 fixo a 100% de operados &lt; TMRG. Exceção LEC: Avaliada mensalmente com base no fluxo real de Consultas Adicionais ≥ Blocos Adicionais.</p>
                     </div>
                 </div>
             </div>
@@ -288,18 +287,37 @@
                                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col justify-between h-full">
                                     <div class="text-2xl font-bold text-amber-400 clinical-data mb-1 leading-none" id="sim_b_block_4c">-</div>
                                     <div class="text-[0.6rem] text-slate-300 uppercase tracking-wide mb-2">4 Curtas</div>
+                                    <div class="flex gap-1 h-3 w-full opacity-90">
+                                        <div class="w-1/4 vc-curta rounded-sm border"></div>
+                                        <div class="w-1/4 vc-curta rounded-sm border"></div>
+                                        <div class="w-1/4 vc-curta rounded-sm border"></div>
+                                        <div class="w-1/4 vc-curta rounded-sm border"></div>
+                                    </div>
                                 </div>
                                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col justify-between h-full">
                                     <div class="text-2xl font-bold text-amber-400 clinical-data mb-1 leading-none" id="sim_b_block_2m">-</div>
                                     <div class="text-[0.6rem] text-slate-300 uppercase tracking-wide mb-2">2 Médias</div>
+                                    <div class="flex gap-1 h-3 w-full opacity-90">
+                                        <div class="w-1/2 vc-media rounded-sm border"></div>
+                                        <div class="w-1/2 vc-media rounded-sm border"></div>
+                                    </div>
                                 </div>
                                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col justify-between h-full">
                                     <div class="text-2xl font-bold text-amber-400 clinical-data mb-1 leading-none" id="sim_b_block_1m2c">-</div>
                                     <div class="text-[0.6rem] text-slate-300 uppercase tracking-wide mb-2">1 Média + 2 Curtas</div>
+                                    <div class="flex gap-1 h-3 w-full opacity-90">
+                                        <div class="w-1/2 vc-media rounded-sm border"></div>
+                                        <div class="w-1/4 vc-curta rounded-sm border"></div>
+                                        <div class="w-1/4 vc-curta rounded-sm border"></div>
+                                    </div>
                                 </div>
                                 <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-col justify-between h-full">
                                     <div class="text-2xl font-bold text-amber-400 clinical-data mb-1 leading-none" id="sim_b_block_1l1c">-</div>
                                     <div class="text-[0.6rem] text-slate-300 uppercase tracking-wide mb-2">1 Longa + 1 Curta</div>
+                                    <div class="flex gap-1 h-3 w-full opacity-90">
+                                        <div class="w-3/4 vc-longa rounded-sm border"></div>
+                                        <div class="w-1/4 vc-curta rounded-sm border"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -445,7 +463,7 @@
                     
                     <hr class="border-slate-200 mb-4">
                     
-                    <h3 class="text-sm font-bold text-ubnic-text uppercase tracking-wide flex items-center gap-2 mb-2">
+                    <h3 class="text-sm font-bold text-ubnic-text uppercase tracking-wide flex items-center gap-2">
                         <span class="w-2 h-2 rounded-full bg-slate-400"></span> Atividade LEC (Fluxos de Entradas e Saídas)
                     </h3>
                     <div class="main-chart-container" onclick="handleChartClick(event, chartLecActivityInstance)"><canvas id="chartLecActivity"></canvas></div>
@@ -666,19 +684,20 @@
             if (!tooltipEl) {
                 tooltipEl = document.createElement('div');
                 tooltipEl.id = 'chartjs-custom-tooltip';
-                tooltipEl.style.background = 'rgba(30, 41, 59, 0.95)';
+                tooltipEl.style.background = '#1e293b'; 
                 tooltipEl.style.borderRadius = '8px';
                 tooltipEl.style.color = 'white';
                 tooltipEl.style.opacity = '0';
                 tooltipEl.style.pointerEvents = 'none';
                 tooltipEl.style.position = 'absolute';
-                tooltipEl.style.transform = 'translate(15px, -50%)';
-                tooltipEl.style.transition = 'opacity .15s ease, transform .15s ease';
+                tooltipEl.style.transform = 'translate(-50%, -100%)'; 
+                tooltipEl.style.marginTop = '-10px';
+                tooltipEl.style.transition = 'opacity .15s ease';
                 tooltipEl.style.fontFamily = "'Inter', sans-serif";
-                tooltipEl.style.fontSize = '11px';
-                tooltipEl.style.padding = '8px 12px';
-                tooltipEl.style.zIndex = '100';
-                tooltipEl.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.2)';
+                tooltipEl.style.padding = '12px 16px';
+                tooltipEl.style.zIndex = '99999';
+                tooltipEl.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.4)';
+                tooltipEl.style.minWidth = '170px';
                 document.body.appendChild(tooltipEl);
             }
 
@@ -694,18 +713,18 @@
 
                 let innerHtml = '';
                 titleLines.forEach(title => {
-                    innerHtml += `<div style="font-weight:700;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:2px;font-size:12px;">${title}</div>`;
+                    innerHtml += `<div style="font-weight:800;font-size:14px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:6px;">${title}</div>`;
                 });
 
                 bodyLines.forEach((body, i) => {
                     const colors = tooltip.labelColors[i];
-                    let span = `<span style="background:${colors.backgroundColor};border-color:${colors.borderColor};border-width:2px;border-style:solid;display:inline-block;height:8px;width:8px;margin-right:6px;border-radius:2px;"></span>`;
-                    innerHtml += `<div style="display:flex;align-items:center;margin-top:2px;">${span}${body}</div>`;
+                    let span = `<span style="background:${colors.backgroundColor};display:inline-block;height:12px;width:12px;margin-right:10px;border-radius:3px;"></span>`;
+                    innerHtml += `<div style="display:flex;align-items:center;margin-top:8px;font-size:13px;font-weight:500;">${span}${body[0]}</div>`;
                 });
 
                 if (tooltip.footer) {
                     tooltip.footer.forEach(f => {
-                        innerHtml += `<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.2);padding-top:4px;white-space:pre-line;color:#cbd5e1;font-size:10px;">${f}</div>`;
+                        innerHtml += `<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.2);padding-top:6px;white-space:pre-line;color:#cbd5e1;font-size:11px;">${f}</div>`;
                     });
                 }
 
@@ -1153,6 +1172,18 @@
             };
             for(let p of procs) hist.procs[p.name] = { has_gdh: p.has_gdh, b1:[], b2:[], b3:[], b4:[], b5:[], total:[], perc_over_180: 0 };
             simHistory = []; 
+            
+            let initialLecBins = [...currentLec];
+            saveState(hist, "Hoje", procs, initialLecBins);
+            
+            hist.activity.lec_inBase.push(0); hist.activity.lec_inEvent.push(0); hist.activity.lec_outBaseNat.push(0); hist.activity.lec_outBaseEv.push(0); hist.activity.lec_outExtra.push(0);
+            hist.activity.lic_fixoSU_in.push(0); hist.activity.lic_inSU.push(0); hist.activity.lic_inConsBase.push(0); hist.activity.lic_inConsExtra.push(0);
+            hist.activity.lic_fixoSU_out.push(0); hist.activity.lic_outBaseNat.push(0); hist.activity.lic_outBaseEv.push(0); hist.activity.lic_outExtra.push(0); hist.activity.lic_outExt.push(0);
+            hist.costs.base.push(0); hist.costs.adic.push(0); hist.costs.fora.push(0); hist.costs.ext.push(0);
+            hist.incentives.access.push(0); hist.incentives.efficiency.push(0); hist.incentives.licUnder180Line.push(0); hist.incentives.rawCriteria.push(null);
+            hist.bedsAvg.push(0); hist.bedsPeak.push(0); hist.bedsDow.push([0,0,0,0,0,0,0]);
+
+            simHistory.push(null); 
 
             let currentDate = new Date(2026, 8); 
 
@@ -1287,7 +1318,6 @@
                 let mExtra = (baseParams.ex3Med * 3) + (baseParams.ex2Med2Curta * 2) + mAddCirExtra;
                 let cExtra = (baseParams.ex2Med2Curta * 2) + (baseParams.ex6Curtas * 6);
                 
-                // Incluir "Operar PTJ Fora" na contagem de volume adicional/extra
                 let totalExtraAvailable = mExtra + cExtra + opPTJFora;
                 totalCapBaseAgg += (baseParams.baseCirurgias + mAddCirBase);
                 totalCapExtraAgg += totalExtraAvailable;
@@ -1464,7 +1494,7 @@
         }
 
         function renderDashboard(h, hrz) {
-            let lastIdx = hrz - 1;
+            let lastIdx = h.labels.length - 1;
             let startLec = h.rawLec[0].total, endLec = h.rawLec[lastIdx].total;
             let diffLec = Math.round(endLec - startLec), accLecStr = (diffLec / hrz).toFixed(1);
             let startLic = h.rawLic[0].total, endLic = h.rawLic[lastIdx].total;
@@ -1490,9 +1520,10 @@
 
             const baseOptionsStock = { 
                 maintainAspectRatio: false, layout: { padding: { left: 10, right: 10 } },
+                interaction: { mode: 'index', intersect: false },
                 scales: { x: { stacked: true, grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, y: { stacked: true, border: {display: false} } }, 
-                plugins: { legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false } },
-                onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+                plugins: { legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, tooltip: { enabled: false, external: customExternalTooltip } },
+                onClick: (e, els) => { if(els.length > 0) { if(els[0].index === 0) return; openModal(els[0].index); } } 
             };
 
             if(chartLicBinsInstance) chartLicBinsInstance.destroy();
@@ -1508,9 +1539,10 @@
 
             const activityOptions = { 
                 maintainAspectRatio: false, layout: { padding: { left: 10, right: 10 } },
+                interaction: { mode: 'index', intersect: false },
                 scales: { x: { stacked: true, grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, y: { stacked: true, border: {display: false} } }, 
-                plugins: { legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false } },
-                onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+                plugins: { legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, tooltip: { enabled: false, external: customExternalTooltip } },
+                onClick: (e, els) => { if(els.length > 0) { if(els[0].index === 0) return; openModal(els[0].index); } } 
             };
 
             if(chartLecActivityInstance) chartLecActivityInstance.destroy();
@@ -1562,6 +1594,7 @@
                 },
                 options: { 
                     maintainAspectRatio: false, layout: { padding: { left: 10, right: 10 } },
+                    interaction: { mode: 'index', intersect: false },
                     scales: { 
                         x: { stacked: true, grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, 
                         y: { stacked: true, beginAtZero: true, max: 25, border: {display: false}, position: 'left', title: {display: true, text: '% Incentivo', font: {size: 9}} }
@@ -1569,7 +1602,8 @@
                     plugins: { 
                         legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, 
                         tooltip: { 
-                            mode: 'index', intersect: false, external: customExternalTooltip, enabled: false,
+                            enabled: false,
+                            external: customExternalTooltip,
                             callbacks: {
                                 label: c => c.dataset.label + ': ' + c.raw + '%',
                                 footer: items => {
@@ -1585,7 +1619,7 @@
                             } 
                         } 
                     },
-                    onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+                    onClick: (e, els) => { if(els.length > 0) { if(els[0].index === 0) return; openModal(els[0].index); } } 
                 }
             });
 
@@ -1601,9 +1635,10 @@
                 },
                 options: { 
                     maintainAspectRatio: false, layout: { padding: { left: 10, right: 10 } },
+                    interaction: { mode: 'index', intersect: false },
                     scales: { x: { grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, y: { border: {display: false}, beginAtZero: true, suggestedMax: Math.max(...h.bedsPeak) + 2 } }, 
-                    plugins: { legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false } },
-                    onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+                    plugins: { legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, tooltip: { enabled: false, external: customExternalTooltip } },
+                    onClick: (e, els) => { if(els.length > 0) { if(els[0].index === 0) return; openModal(els[0].index); } } 
                 }
             });
 
@@ -1626,9 +1661,10 @@
                 },
                 options: { 
                     maintainAspectRatio: false, layout: { padding: { left: 10, right: 10 } },
+                    interaction: { mode: 'index', intersect: false },
                     scales: { x: { stacked: true, grid: {display:false}, ticks: { autoSkip: true, maxTicksLimit: 24, font: {family: "'Inter', sans-serif", size: 10, weight: 'bold'} } }, y: { stacked: true, border: {display: false} } }, 
-                    plugins: { legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false, callbacks: { label: context => context.dataset.label + ': ' + currFormat.format(context.raw) } } },
-                    onClick: (e, els) => { if(els.length > 0) openModal(els[0].index); } 
+                    plugins: { legend: {position:'bottom', labels:{boxWidth:12, font:{family: "'Inter', sans-serif", size:11}}}, tooltip: { enabled: false, external: customExternalTooltip, callbacks: { label: context => context.dataset.label + ': ' + currFormat.format(context.raw) } } },
+                    onClick: (e, els) => { if(els.length > 0) { if(els[0].index === 0) return; openModal(els[0].index); } } 
                 }
             });
 
@@ -1637,13 +1673,16 @@
                 let pBase = currentProcedures.find(x => x.name === k);
                 let volTodayVal = pBase ? pBase.bins.reduce((a,b)=>a+b, 0) : 0;
                 let badge = h.procs[k].has_gdh ? '<span class="badge-gdh">GDH</span>' : '';
-                let alertClass = h.procs[k].perc_over_180 > 25 ? 'badge-alert' : 'text-slate-400 font-normal bg-white border border-slate-100 px-1 py-0.5 rounded';
+                let alertClass = h.procs[k].perc_over_180 > 25 ? 'text-orange-500 border-orange-200 bg-orange-50' : 'text-slate-400 border-slate-100 bg-slate-50';
                 let volFinalVal = h.procs[k].total[lastIdx] !== undefined ? h.procs[k].total[lastIdx] : 0;
-                gridHtml += `<div class="bg-white/80 rounded-xl border border-white p-4 shadow-sm hover:shadow-md transition-all">
-                    <div class="flex justify-between items-center mb-1"><h4 class="text-[0.65rem] font-bold text-ubnic-text uppercase tracking-widest">${k} ${badge}</h4></div>
-                    <div class="text-center my-1"><span class="text-[0.6rem] text-slate-400 font-medium">Hoje: <b class="clinical-data text-slate-600">${volTodayVal}</b></span></div>
-                    <div class="flex justify-between items-end mb-3"><span class="text-[0.65rem] text-slate-500 font-medium">Vol Final: <b class="text-ubnic-dark text-lg clinical-data ml-1">${volFinalVal}</b></span><span class="${alertClass} text-[0.6rem]">>${h.procs[k].perc_over_180}% f/tempo</span></div>
-                    <div class="proc-chart-container"><canvas id="c_${k.replace(/ /g,'_')}"></canvas></div>
+                
+                gridHtml += `<div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all">
+                    <div class="flex justify-between items-center mb-4"><h4 class="text-xs font-bold text-slate-500 uppercase tracking-widest">${k} ${badge}</h4><span class="text-[0.65rem] text-slate-400 font-medium">Hoje: <b class="clinical-data">${volTodayVal}</b></span></div>
+                    <div class="flex justify-between items-end mb-4">
+                        <div class="text-[0.65rem] text-slate-500 font-medium flex flex-col">Vol Final: <span class="text-2xl font-bold text-ubnic-dark clinical-data leading-none mt-1">${volFinalVal}</span></div>
+                        <div class="${alertClass} text-[0.65rem] font-bold px-2 py-1 rounded border">> ${h.procs[k].perc_over_180}% f/tempo</div>
+                    </div>
+                    <div class="proc-chart-container h-[100px] w-full"><canvas id="c_${k.replace(/ /g,'_')}"></canvas></div>
                 </div>`;
             }
             document.getElementById('proc_charts_grid').innerHTML = gridHtml;
@@ -1654,14 +1693,35 @@
                 procChartInstances[k] = new Chart(ctx, {
                     type: 'bar',
                     data: { labels: h.labels, datasets: [ { label: labelsLicTarget[0], data: h.procs[k].b1, backgroundColor: colorsLic[0], borderRadius: 2 }, { label: labelsLicTarget[1], data: h.procs[k].b2, backgroundColor: colorsLic[1], borderRadius: 2 }, { label: labelsLicTarget[2], data: h.procs[k].b3, backgroundColor: colorsLic[2], borderRadius: 2 }, { label: labelsLicTarget[3], data: h.procs[k].b4, backgroundColor: colorsLic[3], borderRadius: 2 }, { label: labelsLicTarget[4], data: h.procs[k].b5, backgroundColor: colorsLic[4], borderRadius: 2 } ] },
-                    options: { maintainAspectRatio: false, plugins: { legend: {display:false}, tooltip: { mode: 'index', intersect: false, external: customExternalTooltip, enabled: false, callbacks: {title:()=>null}} }, scales: { x: {stacked:true, display:false}, y:{stacked:true, beginAtZero: true, border:{display:false}, grid:{display:false}, ticks:{font:{family: "'IBM Plex Mono', monospace", size:8}, maxTicksLimit: 5}} } }
+                    options: { 
+                        maintainAspectRatio: false, 
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { 
+                            legend: {display:false}, 
+                            tooltip: { 
+                                enabled: false,
+                                external: customExternalTooltip,
+                                callbacks: {
+                                    title: items => items.length > 0 ? items[0].label : '',
+                                    label: context => `${context.dataset.label}: ${context.raw}`
+                                } 
+                            } 
+                        }, 
+                        scales: { 
+                            x: {stacked:true, display:false}, 
+                            y: {stacked:true, beginAtZero: true, border:{display:false}, grid:{display:false}, ticks:{font:{family: "'IBM Plex Mono', monospace", size:8}, maxTicksLimit: 5}} 
+                        } 
+                    }
                 });
             }
         }
 
         function handleChartClick(evt, chartObj) {
             const points = chartObj.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-            if (points.length) openModal(points[0].index);
+            if (points.length) {
+                if(points[0].index === 0) return; // Ignora o clique na barra inicial ("Hoje") pois não há registo de atividade 
+                openModal(points[0].index);
+            }
         }
 
         function buildChecklistRow(condition, text, subtext) {
@@ -1764,14 +1824,26 @@
                     if (v.fora > 0) tags += `<div class="text-[0.55rem] font-bold text-pink-600 bg-pink-50 rounded mt-1 border border-pink-100">${Math.round(v.fora)} Fora</div>`;
 
                     let barHtml = totLic > 0 ? `
-                        <div class="mt-3 pt-2 border-t border-slate-100 text-left">
-                            <div class="flex justify-between items-center mb-1 text-[0.55rem] text-slate-500 font-medium uppercase tracking-wide"><span>Em Lista (Total)</span><span class="font-bold text-slate-700 text-xs">${totLic}</span></div>
-                            <div class="flex h-1.5 w-full rounded-full overflow-hidden">
-                                ${b1 > 0 ? `<div style="width: ${(b1/totLic)*100}%" class="bg-[#2ecc71]"></div>` : ''}
-                                ${b2 > 0 ? `<div style="width: ${(b2/totLic)*100}%" class="bg-[#eab308]"></div>` : ''}
-                                ${b3 > 0 ? `<div style="width: ${(b3/totLic)*100}%" class="bg-[#e67e22]"></div>` : ''}
-                                ${b4 > 0 ? `<div style="width: ${(b4/totLic)*100}%" class="bg-[#e11d48]"></div>` : ''}
-                                ${b5 > 0 ? `<div style="width: ${(b5/totLic)*100}%" class="bg-[#881337]"></div>` : ''}
+                        <div class="relative group mt-3 pt-2 border-t border-slate-100 text-left">
+                            <div class="flex justify-between items-center mb-1 text-[0.55rem] text-slate-500 font-medium uppercase tracking-wide">
+                                <span>Em Lista (Total)</span><span class="font-bold text-slate-700 text-xs">${totLic}</span>
+                            </div>
+                            <div class="peer flex h-1.5 w-full rounded-full overflow-hidden cursor-pointer hover:h-2 transition-all">
+                                ${b1 > 0 ? `<div style="width: ${(b1/totLic)*100}%" class="bg-[#2ecc71] h-full"></div>` : ''}
+                                ${b2 > 0 ? `<div style="width: ${(b2/totLic)*100}%" class="bg-[#eab308] h-full"></div>` : ''}
+                                ${b3 > 0 ? `<div style="width: ${(b3/totLic)*100}%" class="bg-[#e67e22] h-full"></div>` : ''}
+                                ${b4 > 0 ? `<div style="width: ${(b4/totLic)*100}%" class="bg-[#e11d48] h-full"></div>` : ''}
+                                ${b5 > 0 ? `<div style="width: ${(b5/totLic)*100}%" class="bg-[#881337] h-full"></div>` : ''}
+                            </div>
+                            
+                            <!-- Novo Tooltip estilo balão Chart.js gerado por CSS puro -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-[#1e293b] text-white rounded-lg shadow-xl opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-opacity duration-200 z-[100] p-3 pointer-events-none border border-slate-700">
+                                <div class="font-extrabold text-[13px] border-b border-white/20 pb-1.5 mb-2">${log.lbl}</div>
+                                ${b1 > 0 ? `<div class="flex items-center text-[12px] font-medium my-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-[#2ecc71] mr-2"></span> < 120 dias: ${b1}</div>` : ''}
+                                ${b2 > 0 ? `<div class="flex items-center text-[12px] font-medium my-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-[#eab308] mr-2"></span> 120-180 dias: ${b2}</div>` : ''}
+                                ${b3 > 0 ? `<div class="flex items-center text-[12px] font-medium my-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-[#e67e22] mr-2"></span> 180-270 dias: ${b3}</div>` : ''}
+                                ${b4 > 0 ? `<div class="flex items-center text-[12px] font-medium my-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-[#e11d48] mr-2"></span> 270-365 dias: ${b4}</div>` : ''}
+                                ${b5 > 0 ? `<div class="flex items-center text-[12px] font-medium my-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-[#881337] mr-2"></span> > 365 dias: ${b5}</div>` : ''}
                             </div>
                         </div>` : '';
 
