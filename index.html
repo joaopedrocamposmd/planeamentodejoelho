@@ -91,14 +91,25 @@
                     <p class="text-slate-500 text-xs">UBNIC Medical Platform &middot; Modelo Determinístico de Coortes &middot; <b class="text-ubnic">Clique nos gráficos para detalhe mensal.</b></p>
                 </div>
             </div>
-            <div class="w-full md:w-64 glass-panel !p-3 !py-2 !rounded-xl">
-                <label class="text-slate-500 mb-1">Horizonte de Simulação</label>
-                <select id="inp_horizonte" onchange="runSim()" class="font-bold text-lg text-ubnic-dark border-transparent bg-white shadow-sm">
-                    <option value="12">1 Ano (12 Meses)</option>
-                    <option value="24" selected>2 Anos (24 Meses)</option>
-                    <option value="36">3 Anos (36 Meses)</option>
-                    <option value="60">5 Anos (60 Meses)</option>
-                </select>
+            
+            <div class="flex items-center gap-3">
+                <div class="flex bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
+                    <button onclick="exportConfig()" class="px-3 py-1.5 text-xs font-bold text-ubnic hover:bg-ubnic/10 rounded transition-colors flex items-center gap-1"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Salvar Cenário</button>
+                    <div class="w-px bg-slate-200 mx-1"></div>
+                    <label class="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded transition-colors cursor-pointer flex items-center gap-1">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Carregar Cenário
+                        <input type="file" id="file_import" accept=".json" class="hidden" onchange="importConfig(event)">
+                    </label>
+                </div>
+                <div class="w-48 glass-panel !p-2 !rounded-xl">
+                    <label class="text-slate-500 mb-1 px-1">Horizonte</label>
+                    <select id="inp_horizonte" onchange="runSim()" class="font-bold text-lg text-ubnic-dark border-transparent bg-white shadow-sm !py-1">
+                        <option value="12">1 Ano (12 M)</option>
+                        <option value="24" selected>2 Anos (24 M)</option>
+                        <option value="36">3 Anos (36 M)</option>
+                        <option value="60">5 Anos (60 M)</option>
+                    </select>
+                </div>
             </div>
         </header>
 
@@ -185,7 +196,7 @@
                     </div>
                     
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <h3 class="font-bold text-ubnic-text mb-4 uppercase text-[0.65rem] tracking-widest border-b border-slate-100 pb-2 flex items-center justify-between"><span>Limites de Acesso (Editáveis)</span><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[0.55rem]">Máx: 15%</span></h3>
+                        <h3 class="font-bold text-ubnic-text mb-4 uppercase text-[0.65rem] tracking-widest border-b border-slate-100 pb-2 flex items-center justify-between"><span>Limites de Acesso (Base)</span><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[0.55rem]">Pode ser sobreposto na Timeline</span></h3>
                         <div class="grid grid-cols-2 gap-4">
                             <div><label>Alvo LIC &lt; TMRG (Nível 1)</label><div class="relative"><input type="number" id="cfg_l1_lic_tmrg" value="93" onchange="runSim()" class="clinical-data"><span class="absolute right-3 top-1 text-slate-400 text-xs">%</span></div></div>
                             <div><label>Alvo LIC &lt; TMRG (Nível 2)</label><div class="relative"><input type="number" id="cfg_l2_lic_tmrg" value="98" onchange="runSim()" class="clinical-data"><span class="absolute right-3 top-1 text-slate-400 text-xs">%</span></div></div>
@@ -673,11 +684,63 @@
             { id: 2, title: 'Consulta JMC', type: 'add_cons_base', start: '2027-01', end: '2027-09', val: 20, dow: 1 },
             { id: 3, title: 'Novos Critérios Triagem', type: 'metric_change', start: '2027-01', end: '', val_tx_alta: 15 },
             { id: 4, title: 'Consulta PMS (Fase 2)', type: 'add_cons_base', start: '2027-05', end: '', val: 20, dow: 1 },
-            { id: 5, title: 'Bloco PMS (Prog Base)', type: 'add_cir_base', start: '2027-05', end: '', val: 7, dow: 1 }
+            { id: 5, title: 'Bloco PMS (Prog Base)', type: 'add_cir_base', start: '2027-05', end: '', val: 7, dow: 1 },
+            { id: 6, title: 'Alívio Transitório Contrato (Fase 1)', type: 'contract_change', start: '2026-09', end: '2027-08', val_l1_lic: 85, val_l2_lic: 90, val_max_lic1: 270, val_max_lec1: 365, val_max_lec2: 365 }
         ];
 
         const colorsLic = ['#2ecc71', '#eab308', '#e67e22', '#e11d48', '#881337']; 
         const labelsLicTarget = ['< 120 dias', '120-180 dias', '180-270 dias', '270-365 dias', '> 365 dias'];
+
+        // JSON EXPORT & IMPORT LOGIC
+        function exportConfig() {
+            const standaloneIds = ['inp_horizonte', 'cfg_efi_turnover', 'inc_efi_1', 'inc_efi_2', 'inc_efi_3', 'inc_efi_4', 'cfg_l1_lic_tmrg', 'cfg_l2_lic_tmrg', 'cfg_l1_lic_max', 'cfg_l1_lec_max', 'cfg_l2_lec_max', 'sim_b_cons', 'sim_b_meses', 'sim_b_ptj', 'sim_b_puc', 'sim_b_emo', 'sim_b_artro', 'inp_pedidos', 'inp_base_consultas', 'inp_tx_alta', 'inp_tx_cirurgia', 'inp_base_cirurgias', 'inp_extra_consultas', 'inp_extra_3med', 'inp_extra_2med2curta', 'inp_extra_6curtas'];
+            let standaloneInputs = {};
+            standaloneIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) standaloneInputs[id] = el.type === 'checkbox' ? el.checked : el.value;
+            });
+            
+            const config = {
+                currentProcedures, currentLec, sysVols, sysLOS, plannedEvents, standaloneInputs
+            };
+            
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `ubnic_cenario_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchorElem.click();
+        }
+
+        function importConfig(evt) {
+            const file = evt.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    if(config.currentProcedures) currentProcedures = config.currentProcedures;
+                    if(config.currentLec) currentLec = config.currentLec;
+                    if(config.sysVols) sysVols = config.sysVols;
+                    if(config.sysLOS) sysLOS = config.sysLOS;
+                    if(config.plannedEvents) plannedEvents = config.plannedEvents;
+                    
+                    if(config.standaloneInputs) {
+                        for(let id in config.standaloneInputs) {
+                            const el = document.getElementById(id);
+                            if(el) {
+                                if(el.type === 'checkbox') el.checked = config.standaloneInputs[id];
+                                else el.value = config.standaloneInputs[id];
+                            }
+                        }
+                    }
+                    initBaseTables(); // rebuilds UI and runs sim
+                    evt.target.value = ''; // reset file input
+                } catch (err) {
+                    alert("Erro ao ler o ficheiro JSON de configuração.");
+                }
+            };
+            reader.readAsText(file);
+        }
 
         const customExternalTooltip = (context) => {
             let tooltipEl = document.getElementById('chartjs-custom-tooltip');
@@ -890,6 +953,15 @@
                                 <div class="flex items-center gap-1">EMO <input type="number" min="0" value="${ev.val_emo||0}" onchange="updateEv(${i}, 'val_emo', this.value)" class="clinical-data !p-1 !text-left"></div>
                             </div>
                         </div>`;
+                } else if(ev.type === 'contract_change') {
+                    valInput = `
+                        <div class="grid grid-cols-5 gap-1">
+                            <div><span class="text-[0.55rem] font-bold text-slate-500 uppercase block mb-0.5" title="Alvo LIC < TMRG Nível 1">LIC N1%</span><input type="number" value="${ev.val_l1_lic||0}" onchange="updateEv(${i}, 'val_l1_lic', this.value)" class="clinical-data !text-xs !text-left !px-1"></div>
+                            <div><span class="text-[0.55rem] font-bold text-slate-500 uppercase block mb-0.5" title="Alvo LIC < TMRG Nível 2">LIC N2%</span><input type="number" value="${ev.val_l2_lic||0}" onchange="updateEv(${i}, 'val_l2_lic', this.value)" class="clinical-data !text-xs !text-left !px-1"></div>
+                            <div><span class="text-[0.55rem] font-bold text-slate-500 uppercase block mb-0.5" title="Max Dias Tolerância LIC">Max LIC</span><input type="number" value="${ev.val_max_lic1||0}" onchange="updateEv(${i}, 'val_max_lic1', this.value)" class="clinical-data !text-xs !text-left !px-1"></div>
+                            <div><span class="text-[0.55rem] font-bold text-slate-500 uppercase block mb-0.5" title="Max Dias Tolerância LEC N1">LEC N1</span><input type="number" value="${ev.val_max_lec1||0}" onchange="updateEv(${i}, 'val_max_lec1', this.value)" class="clinical-data !text-xs !text-left !px-1"></div>
+                            <div><span class="text-[0.55rem] font-bold text-slate-500 uppercase block mb-0.5" title="Max Dias Tolerância LEC N2">LEC N2</span><input type="number" value="${ev.val_max_lec2||0}" onchange="updateEv(${i}, 'val_max_lec2', this.value)" class="clinical-data !text-xs !text-left !px-1"></div>
+                        </div>`;
                 } else if(ev.type === 'add_cir_base' || ev.type === 'add_cir_extra') {
                     valInput = `
                         <div class="grid grid-cols-2 gap-1">
@@ -926,6 +998,7 @@
                         <option value="metric_change" ${ev.type=='metric_change'?'selected':''}>Alt. Critérios (Base)</option>
                         <option value="ext_gdh" ${ev.type=='ext_gdh'?'selected':''}>Externalização GDH</option>
                         <option value="op_ptj_fora" ${ev.type=='op_ptj_fora'?'selected':''}>Operar PTJ Fora (Int)</option>
+                        <option value="contract_change" ${ev.type=='contract_change'?'selected':''}>Alt. Limites Contrato</option>
                     </select>
                     <input type="month" id="ev_start_${i}" value="${ev.start}" onchange="updateStartDate(${i}, this.value)" class="clinical-data !text-xs text-slate-500">
                     <input type="month" id="ev_end_${i}" value="${ev.end}" min="${ev.start}" onchange="updateEv(${i}, 'end', this.value)" class="clinical-data !text-xs text-slate-500">
@@ -965,6 +1038,9 @@
             if(field === 'type') {
                 if(value === 'add_cir_base' || value === 'add_cir_extra') { if(ev.dow === undefined) ev.dow = 1; }
                 if(value === 'metric_change' && ev.val_tx_alta === undefined) { ev.val_tx_alta = 15; }
+                if(value === 'contract_change') {
+                    if(ev.val_l1_lic === undefined) { ev.val_l1_lic = 85; ev.val_l2_lic = 90; ev.val_max_lic1 = 270; ev.val_max_lec1 = 365; ev.val_max_lec2 = 365; }
+                }
                 renderEvents();
             }
             runSim(); 
@@ -1124,11 +1200,12 @@
             if(document.getElementById('inc_efi_3').checked) cfgEfi += 2.5;
             if(document.getElementById('inc_efi_4').checked) cfgEfi += 2.5;
 
-            let cfgL1_LIC_TMRG = parseFloat(document.getElementById('cfg_l1_lic_tmrg').value) || 93;
-            let cfgL2_LIC_TMRG = parseFloat(document.getElementById('cfg_l2_lic_tmrg').value) || 98;
-            let cfgL1_LIC_MAX = parseInt(document.getElementById('cfg_l1_lic_max').value) || 270;
-            let cfgL1_LEC_MAX = parseInt(document.getElementById('cfg_l1_lec_max').value) || 365;
-            let cfgL2_LEC_MAX = parseInt(document.getElementById('cfg_l2_lec_max').value) || 270;
+            // Limites de Acesso Globais
+            const global_cfgL1_LIC_TMRG = parseFloat(document.getElementById('cfg_l1_lic_tmrg').value) || 93;
+            const global_cfgL2_LIC_TMRG = parseFloat(document.getElementById('cfg_l2_lic_tmrg').value) || 98;
+            const global_cfgL1_LIC_MAX = parseInt(document.getElementById('cfg_l1_lic_max').value) || 270;
+            const global_cfgL1_LEC_MAX = parseInt(document.getElementById('cfg_l1_lec_max').value) || 365;
+            const global_cfgL2_LEC_MAX = parseInt(document.getElementById('cfg_l2_lec_max').value) || 270;
 
             let uiChanged = false;
             plannedEvents.forEach(ev => {
@@ -1200,6 +1277,13 @@
                 let eventLogs = [];
                 let isMetricEvent = false;
                 let eventTxCir = baseTxCir;
+                
+                // Variáveis Locais de Contratualização para este Mês
+                let m_cfgL1_LIC_TMRG = global_cfgL1_LIC_TMRG;
+                let m_cfgL2_LIC_TMRG = global_cfgL2_LIC_TMRG;
+                let m_cfgL1_LIC_MAX = global_cfgL1_LIC_MAX;
+                let m_cfgL1_LEC_MAX = global_cfgL1_LEC_MAX;
+                let m_cfgL2_LEC_MAX = global_cfgL2_LEC_MAX;
 
                 plannedEvents.forEach(ev => {
                     if(isDateInRange(currentDate, ev.start, ev.end)) {
@@ -1229,6 +1313,14 @@
                         else if(ev.type === 'op_ptj_fora') { 
                             opPTJFora += Math.max(0, parseFloat(ev.val)||0); 
                             eventLogs.push(`Operar PTJ Fora (${ev.title})`); 
+                        }
+                        else if(ev.type === 'contract_change') {
+                            m_cfgL1_LIC_TMRG = parseFloat(ev.val_l1_lic) || m_cfgL1_LIC_TMRG;
+                            m_cfgL2_LIC_TMRG = parseFloat(ev.val_l2_lic) || m_cfgL2_LIC_TMRG;
+                            m_cfgL1_LIC_MAX = parseInt(ev.val_max_lic1) || m_cfgL1_LIC_MAX;
+                            m_cfgL1_LEC_MAX = parseInt(ev.val_max_lec1) || m_cfgL1_LEC_MAX;
+                            m_cfgL2_LEC_MAX = parseInt(ev.val_max_lec2) || m_cfgL2_LEC_MAX;
+                            eventLogs.push(`Alt. Limites Contrato (${ev.title})`);
                         }
                     }
                 });
@@ -1322,35 +1414,57 @@
                 totalCapBaseAgg += (baseParams.baseCirurgias + mAddCirBase);
                 totalCapExtraAgg += totalExtraAvailable;
                 
-                let licTotal = 0, licUnder180 = 0, licOver270 = 0;
+                let licTotal = 0, licUnder180 = 0, licOverMaxTolerado = 0;
+                let m_licMaxBinIndex = Math.floor(m_cfgL1_LIC_MAX / 30);
+                
                 for(let p of procs) {
                     let sum = p.bins.reduce((a,b)=>a+b, 0);
                     licTotal += sum;
                     licUnder180 += p.bins.slice(0, 6).reduce((a,b)=>a+b, 0); 
-                    licOver270 += p.bins.slice(9).reduce((a,b)=>a+b, 0);
+                    if (m_licMaxBinIndex < p.bins.length) {
+                        licOverMaxTolerado += p.bins.slice(m_licMaxBinIndex).reduce((a,b)=>a+b, 0);
+                    }
                 }
+                
                 let percLicUnder180 = licTotal > 0 ? (licUnder180 / licTotal) * 100 : 100;
+                
                 let lecTotal = newLecBins.reduce((a,b)=>a+b, 0);
-                let lecOver120 = (newLecBins[1]*(60/90)) + newLecBins.slice(2).reduce((a,b)=>a+b, 0);
-                let lecOver270 = newLecBins.slice(3).reduce((a,b)=>a+b, 0);
-                let lecOver365 = newLecBins.slice(4).reduce((a,b)=>a+b, 0);
+                let getLecOver = (days) => {
+                    let binIdx = Math.floor(days/90);
+                    if (binIdx >= newLecBins.length) return 0;
+                    let remRatio = (days % 90) / 90;
+                    let overVal = (newLecBins[binIdx] * (1 - remRatio));
+                    return overVal + newLecBins.slice(binIdx + 1).reduce((a,b)=>a+b, 0);
+                };
+
+                let lecOver120 = getLecOver(120);
+                let lecOverMaxN1 = getLecOver(m_cfgL1_LEC_MAX);
+                let lecOverMaxN2 = getLecOver(m_cfgL2_LEC_MAX);
 
                 let isExcMet = consExtraTarget >= totalExtraAvailable; 
                 let accInc = 0, level = 0;
-                let hitLic270 = licOver270 === 0;
-                let hitLec365 = lecOver365 === 0 || isExcMet;
-                let hitLec270 = lecOver270 === 0 || isExcMet;
+                
+                let hitLicMax = licOverMaxTolerado === 0;
+                let hitLecN1Max = lecOverMaxN1 === 0 || isExcMet;
+                let hitLecN2Max = lecOverMaxN2 === 0 || isExcMet;
                 let hitLec120 = lecOver120 === 0;
                 let isExtClear = mLog.lic.outExt === 0;
 
                 if(percLicUnder180 >= 100 && hitLec120 && isExtClear) { accInc = 15; level = 3; } 
-                else if (percLicUnder180 >= cfgL2_LIC_TMRG && hitLic270 && hitLec270 && isExtClear) { accInc = 10; level = 2; } 
-                else if (percLicUnder180 >= cfgL1_LIC_TMRG && hitLic270 && hitLec365) { accInc = 5; level = 1; }
+                else if (percLicUnder180 >= m_cfgL2_LIC_TMRG && hitLicMax && hitLecN2Max && isExtClear) { accInc = 10; level = 2; } 
+                else if (percLicUnder180 >= m_cfgL1_LIC_TMRG && hitLicMax && hitLecN1Max) { accInc = 5; level = 1; }
                 
                 let totInc = accInc + cfgEfi;
                 mLog.incentives = { 
                     access: accInc, efficiency: cfgEfi, total: totInc, 
-                    raw: { level, percLicUnder180, licOver270, lecOver365: Math.round(lecOver365), lecOver270: Math.round(lecOver270), lecOver120, consExtraTarget, totalExtraAvailable, isExcMet, isExtClear } 
+                    raw: { 
+                        level, percLicUnder180, licOverMaxTolerado, 
+                        lecOverMaxN1: Math.round(lecOverMaxN1), 
+                        lecOverMaxN2: Math.round(lecOverMaxN2), 
+                        lecOver120, consExtraTarget, totalExtraAvailable, isExcMet, isExtClear,
+                        // Guardar no log as metas deste mês para desenhar o tooltip corretamente
+                        m_cfgL1_LIC_TMRG, m_cfgL2_LIC_TMRG, m_cfgL1_LIC_MAX, m_cfgL1_LEC_MAX, m_cfgL2_LEC_MAX 
+                    } 
                 };
 
                 for(let pName in mLog.lic.procMap) {
@@ -1754,8 +1868,6 @@
             document.getElementById('modAccLevelBadge').innerText = `Nível ${raw.level}`;
             document.getElementById('modAccPercGain').innerText = `+${log.incentives.access}%`;
 
-            let cfgL1 = parseFloat(document.getElementById('cfg_l1_lic_tmrg').value) || 93;
-            let cfgL2 = parseFloat(document.getElementById('cfg_l2_lic_tmrg').value) || 98;
             let targetLvl = raw.level === 3 ? 3 : raw.level + 1;
             document.getElementById('modAccCriteriaTitle').innerText = raw.level === 3 ? "Critérios Nível 3 (Todos Atingidos)" : `O que falhou para o Nível ${targetLvl}?`;
             
@@ -1767,14 +1879,14 @@
                 clist += buildChecklistRow(raw.lecOver120 === 0, `LEC > 120 Dias: ${Math.round(raw.lecOver120)} utentes`, `Exigência Nível 3: Zero doentes > 120 dias`);
                 clist += buildChecklistRow(raw.isExtClear, `Externalização GDH: ${raw.isExtClear ? 'Zero' : 'Ativa'}`, `Exigência Nível 3: Sem externalização no mês`);
             } else if (targetLvl === 2) {
-                clist += buildChecklistRow(raw.percLicUnder180 >= cfgL2, `LIC < TMRG: ${raw.percLicUnder180.toFixed(1)}%`, `Exigência Nível 2: ≥ ${cfgL2}%`);
-                clist += buildChecklistRow(raw.licOver270 === 0, `LIC > 270 Dias: ${Math.round(raw.licOver270)} utentes`, `Exigência Nível 2: Zero doentes > 270 dias na LIC`);
-                clist += buildChecklistRow(raw.lecOver270 === 0 || raw.isExcMet, `LEC > 270 Dias`, `Exigência Nível 2: Zero doentes > 270 dias na LEC <br><span class="text-[0.6rem] text-slate-500 italic">${altLecText}</span>`);
+                clist += buildChecklistRow(raw.percLicUnder180 >= raw.m_cfgL2_LIC_TMRG, `LIC < TMRG: ${raw.percLicUnder180.toFixed(1)}%`, `Exigência Nível 2: ≥ ${raw.m_cfgL2_LIC_TMRG}%`);
+                clist += buildChecklistRow(raw.licOverMaxTolerado === 0, `LIC > ${raw.m_cfgL1_LIC_MAX} Dias: ${Math.round(raw.licOverMaxTolerado)} utentes`, `Exigência Nível 2: Zero doentes > ${raw.m_cfgL1_LIC_MAX} dias na LIC`);
+                clist += buildChecklistRow(raw.lecOverMaxN2 === 0 || raw.isExcMet, `LEC > ${raw.m_cfgL2_LEC_MAX} Dias`, `Exigência Nível 2: Zero doentes > ${raw.m_cfgL2_LEC_MAX} dias na LEC <br><span class="text-[0.6rem] text-slate-500 italic">${altLecText}</span>`);
                 clist += buildChecklistRow(raw.isExtClear, `Externalização GDH`, `Exigência Nível 2: Sem externalização no mês`);
             } else if (targetLvl === 1) {
-                clist += buildChecklistRow(raw.percLicUnder180 >= cfgL1, `LIC < TMRG: ${raw.percLicUnder180.toFixed(1)}%`, `Exigência Nível 1: ≥ ${cfgL1}%`);
-                clist += buildChecklistRow(raw.licOver270 === 0, `LIC > 270 Dias: ${Math.round(raw.licOver270)} utentes`, `Exigência Nível 1: Zero doentes > 270 dias na LIC`);
-                clist += buildChecklistRow(raw.lecOver365 === 0 || raw.isExcMet, `LEC > 365 Dias: ${raw.lecOver365} utentes`, `Exigência Nível 1: Zero doentes > 365 dias na LEC <br><span class="text-[0.6rem] text-slate-500 italic">${altLecText}</span>`);
+                clist += buildChecklistRow(raw.percLicUnder180 >= raw.m_cfgL1_LIC_TMRG, `LIC < TMRG: ${raw.percLicUnder180.toFixed(1)}%`, `Exigência Nível 1: ≥ ${raw.m_cfgL1_LIC_TMRG}%`);
+                clist += buildChecklistRow(raw.licOverMaxTolerado === 0, `LIC > ${raw.m_cfgL1_LIC_MAX} Dias: ${Math.round(raw.licOverMaxTolerado)} utentes`, `Exigência Nível 1: Zero doentes > ${raw.m_cfgL1_LIC_MAX} dias na LIC`);
+                clist += buildChecklistRow(raw.lecOverMaxN1 === 0 || raw.isExcMet, `LEC > ${raw.m_cfgL1_LEC_MAX} Dias: ${raw.lecOverMaxN1} utentes`, `Exigência Nível 1: Zero doentes > ${raw.m_cfgL1_LEC_MAX} dias na LEC <br><span class="text-[0.6rem] text-slate-500 italic">${altLecText}</span>`);
             }
             document.getElementById('modAccCriteriaList').innerHTML = clist;
 
@@ -1836,7 +1948,6 @@
                                 ${b5 > 0 ? `<div style="width: ${(b5/totLic)*100}%" class="bg-[#881337] h-full"></div>` : ''}
                             </div>
                             
-                            <!-- Novo Tooltip estilo balão Chart.js gerado por CSS puro -->
                             <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-[#1e293b] text-white rounded-lg shadow-xl opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-opacity duration-200 z-[100] p-3 pointer-events-none border border-slate-700">
                                 <div class="font-extrabold text-[13px] border-b border-white/20 pb-1.5 mb-2">${log.lbl}</div>
                                 ${b1 > 0 ? `<div class="flex items-center text-[12px] font-medium my-1.5"><span class="w-2.5 h-2.5 rounded-[3px] bg-[#2ecc71] mr-2"></span> < 120 dias: ${b1}</div>` : ''}
